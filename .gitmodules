@@ -1,0 +1,3 @@
+[submodule "hostapd/src_git"]
+	path = hostapd/src_git
+	url = git@github.com:legale/hostap.git
