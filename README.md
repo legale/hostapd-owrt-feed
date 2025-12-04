@@ -9,11 +9,14 @@
    cd hostapd-owrt-feed
    ```
 
-2. Внутри него подготовьте исходники `src_git`, клон официального репозитория hostapd/wpa_supplicant:
+2. Внутри него подготовьте исходники `src_git`, клон репозитория `legale/hostap`:
 
    ```bash
    cd hostapd
-   git clone https://w1.fi/hostap.git src_git
+   git clone git@github.com:legale/hostap.git src_git
+   cd src_git
+   git switch wifi-fail-monitoring
+   cd ..
    ```
 
-Теперь `hostapd/src_git` содержит код из оригинального репозитория, и можно продолжить сборку.
+Теперь `hostapd/src_git` содержит нужную ветку `wifi-fail-monitoring`, и можно продолжить сборку.
