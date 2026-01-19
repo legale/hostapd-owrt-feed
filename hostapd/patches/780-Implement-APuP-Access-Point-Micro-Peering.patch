@@ -39,7 +39,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -1416,6 +1416,11 @@ ifdef CONFIG_NO_TKIP
+@@ -1426,6 +1426,11 @@ ifdef CONFIG_NO_TKIP
  CFLAGS += -DCONFIG_NO_TKIP
  endif
  
@@ -362,9 +362,9 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +              const struct ieee802_11_elems *elems );
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -60,6 +60,9 @@
- #include "nan_usd_ap.h"
+@@ -64,6 +64,9 @@
  #include "pasn/pasn_common.h"
+ #include "ap/ctrl_iface_ap.h"
  
 +#ifdef CONFIG_APUP
 +#	include "apup.h"
@@ -372,7 +372,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -3617,8 +3620,8 @@ static u16 check_multi_ap(struct hostapd
+@@ -3672,8 +3675,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -383,7 +383,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -4005,7 +4008,7 @@ static int __check_assoc_ies(struct host
+@@ -4060,7 +4063,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
@@ -392,7 +392,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
  
-@@ -6060,6 +6063,11 @@ static void handle_beacon(struct hostapd
+@@ -6116,6 +6119,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);

@@ -21,14 +21,14 @@ handle reload.
  OBJS += ../src/ap/drv_callbacks.o
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -40,6 +40,7 @@ struct hapd_global {
- 
- static struct hapd_global global;
+@@ -145,6 +145,7 @@ static void hostapd_logger_cb(void *ctx,
+ }
+ #endif /* CONFIG_NO_HOSTAPD_LOGGER */
  
 +extern int radius_main(int argc, char **argv);
  
- #ifndef CONFIG_NO_HOSTAPD_LOGGER
- static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
+ /**
+  * hostapd_driver_init - Preparate driver interface
 @@ -793,6 +794,11 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;

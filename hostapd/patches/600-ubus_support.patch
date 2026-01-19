@@ -7,7 +7,7 @@ probe/assoc/auth requests via object subscribe.
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -167,6 +167,12 @@ OBJS += ../src/common/hw_features_common
+@@ -170,6 +170,12 @@ OBJS += ../src/common/hw_features_common
  
  OBJS += ../src/eapol_auth/eapol_auth_sm.o
  
@@ -92,7 +92,7 @@ probe/assoc/auth requests via object subscribe.
  		return 0;
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -317,6 +317,10 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -318,6 +318,10 @@ int hostapd_notif_assoc(struct hostapd_d
  	struct hostapd_iface *iface = hapd->iface;
  #endif /* CONFIG_OWE */
  	bool updated = false;
@@ -103,7 +103,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (addr == NULL) {
  		/*
-@@ -461,6 +465,12 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -462,6 +466,12 @@ int hostapd_notif_assoc(struct hostapd_d
  		goto fail;
  	}
  
@@ -116,7 +116,7 @@ probe/assoc/auth requests via object subscribe.
  #ifdef CONFIG_P2P
  	if (elems.p2p) {
  		wpabuf_free(sta->p2p_ie);
-@@ -1369,6 +1379,7 @@ void hostapd_event_ch_switch(struct host
+@@ -1374,6 +1384,7 @@ void hostapd_event_ch_switch(struct host
  
  		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_CSA_FINISHED
  			"freq=%d dfs=%d", freq, is_dfs);
@@ -195,7 +195,7 @@ probe/assoc/auth requests via object subscribe.
  struct hostapd_iface * hostapd_alloc_iface(void);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -2897,7 +2897,7 @@ static void handle_auth(struct hostapd_d
+@@ -2913,7 +2913,7 @@ static void handle_auth(struct hostapd_d
  	u16 auth_alg, auth_transaction, status_code;
  	u16 resp = WLAN_STATUS_SUCCESS;
  	struct sta_info *sta = NULL;
@@ -204,7 +204,7 @@ probe/assoc/auth requests via object subscribe.
  	u16 fc;
  	const u8 *challenge = NULL;
  	u8 resp_ies[2 + WLAN_AUTH_CHALLENGE_LEN];
-@@ -2908,6 +2908,11 @@ static void handle_auth(struct hostapd_d
+@@ -2924,6 +2924,11 @@ static void handle_auth(struct hostapd_d
  #ifdef CONFIG_IEEE80211BE
  	bool mld_sta = false;
  #endif /* CONFIG_IEEE80211BE */
@@ -216,8 +216,8 @@ probe/assoc/auth requests via object subscribe.
  
  	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.auth)) {
  		wpa_printf(MSG_INFO, "handle_auth - too short payload (len=%lu)",
-@@ -3104,6 +3109,13 @@ static void handle_auth(struct hostapd_d
- 		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+@@ -3152,6 +3157,13 @@ static void handle_auth(struct hostapd_d
+ 		WIFIMON_ERR(S_AUTH_HANDLE, "Ignore Authentication frame from ACL reject auth_alg=%u mac=" MACSTR " bssid=" MACSTR, auth_alg, MAC2STR(mgmt->sa),MAC2STR(mgmt->da));
  		goto fail;
  	}
 +	ubus_resp = hostapd_ubus_handle_event(hapd, &req);
@@ -230,7 +230,7 @@ probe/assoc/auth requests via object subscribe.
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -5367,7 +5379,7 @@ static void handle_assoc(struct hostapd_
+@@ -5422,7 +5434,7 @@ static void handle_assoc(struct hostapd_
  	int resp = WLAN_STATUS_SUCCESS;
  	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
  	const u8 *pos;
@@ -239,7 +239,7 @@ probe/assoc/auth requests via object subscribe.
  	struct sta_info *sta;
  	u8 *tmp = NULL;
  #ifdef CONFIG_FILS
-@@ -5609,6 +5621,11 @@ static void handle_assoc(struct hostapd_
+@@ -5664,6 +5676,11 @@ static void handle_assoc(struct hostapd_
  		left = res;
  	}
  #endif /* CONFIG_FILS */
@@ -249,9 +249,9 @@ probe/assoc/auth requests via object subscribe.
 +		.ssi_signal = rssi,
 +	};
  
- 	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
- 	 * is used */
-@@ -5711,6 +5728,13 @@ static void handle_assoc(struct hostapd_
+ 	//WIFIMON RELATED INFO
+ 	debug_print_rsn_ie(pos, left, mgmt->sa, hapd->own_addr);
+@@ -5769,6 +5786,13 @@ static void handle_assoc(struct hostapd_
  	if (set_beacon)
  		ieee802_11_update_beacons(hapd->iface);
  
@@ -265,7 +265,7 @@ probe/assoc/auth requests via object subscribe.
   fail:
  
  	/*
-@@ -5940,6 +5964,7 @@ static void handle_disassoc(struct hosta
+@@ -5996,6 +6020,7 @@ static void handle_disassoc(struct hosta
  			   (unsigned long) len);
  		return;
  	}
@@ -273,7 +273,7 @@ probe/assoc/auth requests via object subscribe.
  
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (!sta) {
-@@ -5971,6 +5996,8 @@ static void handle_deauth(struct hostapd
+@@ -6027,6 +6052,8 @@ static void handle_deauth(struct hostapd
  	/* Clear the PTKSA cache entries for PASN */
  	ptksa_cache_flush(hapd->ptksa, mgmt->sa, WPA_CIPHER_NONE);
  
@@ -305,7 +305,7 @@ probe/assoc/auth requests via object subscribe.
  		wpa_printf(MSG_DEBUG, "RRM action %u is not supported",
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -542,6 +542,7 @@ void ap_handle_timer(void *eloop_ctx, vo
+@@ -543,6 +543,7 @@ void ap_handle_timer(void *eloop_ctx, vo
  		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
  			       "local deauth request");
@@ -313,7 +313,7 @@ probe/assoc/auth requests via object subscribe.
  		ap_free_sta(hapd, sta);
  		return;
  	}
-@@ -699,6 +700,7 @@ skip_poll:
+@@ -701,6 +702,7 @@ skip_poll:
  		mlme_deauthenticate_indication(
  			hapd, sta,
  			WLAN_REASON_PREV_AUTH_NOT_VALID);
@@ -321,7 +321,7 @@ probe/assoc/auth requests via object subscribe.
  		ap_free_sta(hapd, sta);
  		break;
  	}
-@@ -1521,15 +1523,28 @@ void ap_sta_set_authorized_event(struct
+@@ -1530,15 +1532,28 @@ void ap_sta_set_authorized_event(struct
  		os_snprintf(buf, sizeof(buf), MACSTR, MAC2STR(sta->addr));
  
  	if (authorized) {
@@ -350,9 +350,9 @@ probe/assoc/auth requests via object subscribe.
  #ifdef CONFIG_P2P
  		if (wpa_auth_get_ip_addr(sta->wpa_sm, ip_addr_buf) == 0) {
  			os_snprintf(ip_addr, sizeof(ip_addr),
-@@ -1540,6 +1555,13 @@ void ap_sta_set_authorized_event(struct
- 		}
+@@ -1550,6 +1565,13 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
+ 		WIFIMON_OK(S_AUTHORIZED, "authorized=%d mac=" MACSTR " bssid=" MACSTR " %s", authorized, MAC2STR(sta->addr), MAC2STR(hapd->own_addr), ip_addr);
  
 +		if (sta->auth_alg < ARRAY_SIZE(auth_algs))
 +			auth_alg = auth_algs[sta->auth_alg];
@@ -364,7 +364,7 @@ probe/assoc/auth requests via object subscribe.
  		keyid = ap_sta_wpa_get_keyid(hapd, sta);
  		if (keyid) {
  			os_snprintf(keyid_buf, sizeof(keyid_buf),
-@@ -1558,17 +1580,19 @@ void ap_sta_set_authorized_event(struct
+@@ -1568,17 +1590,19 @@ void ap_sta_set_authorized_event(struct
  					 dpp_pkhash, SHA256_MAC_LEN);
  		}
  
@@ -478,8 +478,8 @@ probe/assoc/auth requests via object subscribe.
  }
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
-@@ -328,6 +328,7 @@ static void hostapd_wpa_auth_psk_failure
- 	struct hostapd_data *hapd = ctx;
+@@ -334,6 +334,7 @@ static void hostapd_wpa_auth_psk_failure
+ 
  	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_POSSIBLE_PSK_MISMATCH MACSTR,
  		MAC2STR(addr));
 +	hostapd_ubus_notify(hapd, "key-mismatch", addr);
@@ -636,7 +636,7 @@ probe/assoc/auth requests via object subscribe.
 +}
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -191,6 +191,13 @@ ifdef CONFIG_EAPOL_TEST
+@@ -196,6 +196,13 @@ ifdef CONFIG_EAPOL_TEST
  CFLAGS += -Werror -DEAPOL_TEST
  endif
  
@@ -650,7 +650,7 @@ probe/assoc/auth requests via object subscribe.
  ifdef CONFIG_CODE_COVERAGE
  CFLAGS += -O0 -fprofile-arcs -ftest-coverage -U_FORTIFY_SOURCE
  LIBS += -lgcov
-@@ -1043,6 +1050,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
+@@ -1048,6 +1055,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
  CFLAGS += -DCONFIG_CTRL_IFACE_MIB
  endif
  OBJS += ../src/ap/ctrl_iface_ap.o

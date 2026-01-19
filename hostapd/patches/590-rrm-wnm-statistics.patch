@@ -92,8 +92,8 @@ method.
  	if (disassoc_timer) {
  		/* send disassociation frame after time-out */
  		set_disassoc_timer(hapd, sta, disassoc_timer);
-@@ -1028,6 +1033,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
- 	}
+@@ -1029,6 +1034,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
+ 	wpa_hexdump(MSG_INFO, "BSS_TM_REQ FRAME", buf, pos - buf);
  	os_free(buf);
  
 +	hapd->openwrt_stats.wnm.bss_transition_request_tx++;

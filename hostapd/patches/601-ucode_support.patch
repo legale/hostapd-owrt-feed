@@ -8,7 +8,7 @@ as adding/removing interfaces.
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -169,9 +169,21 @@ OBJS += ../src/eapol_auth/eapol_auth_sm.
+@@ -172,9 +172,21 @@ OBJS += ../src/eapol_auth/eapol_auth_sm.
  
  ifdef CONFIG_UBUS
  CFLAGS += -DUBUS_SUPPORT
@@ -455,7 +455,7 @@ as adding/removing interfaces.
  
  static int cookie_handler(struct nl_msg *msg, void *arg)
  {
-@@ -10962,6 +11024,37 @@ static bool nl80211_is_drv_shared(void *
+@@ -10963,6 +11025,37 @@ static bool nl80211_is_drv_shared(void *
  #endif /* CONFIG_IEEE80211BE */
  
  
@@ -493,7 +493,7 @@ as adding/removing interfaces.
  static int driver_nl80211_send_mlme(void *priv, const u8 *data,
  				    size_t data_len, int noack,
  				    unsigned int freq,
-@@ -14510,6 +14603,8 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -14511,6 +14604,8 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_acl = wpa_driver_nl80211_set_acl,
  	.if_add = wpa_driver_nl80211_if_add,
  	.if_remove = driver_nl80211_if_remove,
@@ -539,18 +539,18 @@ as adding/removing interfaces.
  	case NL80211_CMD_DISCONNECT:
 --- a/src/utils/wpa_debug.c
 +++ b/src/utils/wpa_debug.c
-@@ -26,6 +26,10 @@ static FILE *wpa_debug_tracing_file = NU
- #define WPAS_TRACE_PFX "wpas <%d>: "
- #endif /* CONFIG_DEBUG_LINUX_TRACING */
+@@ -39,6 +39,10 @@ int wpa_debug_syslog = 0;
+ static FILE *out_file = NULL;
+ #endif /* CONFIG_NO_STDOUT_DEBUG */
  
 +void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
 +void (*wpa_hexdump_hook)(int level, const char *title, const void *buf,
 +			 size_t len);
 +void (*wpa_netlink_hook)(int tx, const void *data, size_t len);
  
- int wpa_debug_level = MSG_INFO;
- int wpa_debug_show_keys = 0;
-@@ -210,6 +214,12 @@ void _wpa_printf(int level, const char *
+ #ifdef CONFIG_ANDROID_LOG
+ 
+@@ -213,6 +217,12 @@ void _wpa_printf(int level, const char *
  {
  	va_list ap;
  
@@ -563,7 +563,7 @@ as adding/removing interfaces.
  	if (level >= wpa_debug_level) {
  #ifdef CONFIG_ANDROID_LOG
  		va_start(ap, fmt);
-@@ -260,6 +270,9 @@ void _wpa_hexdump(int level, const char
+@@ -263,6 +273,9 @@ void _wpa_hexdump(int level, const char
  {
  	size_t i;
  
@@ -575,9 +575,9 @@ as adding/removing interfaces.
  		fprintf(wpa_debug_tracing_file,
 --- a/src/utils/wpa_debug.h
 +++ b/src/utils/wpa_debug.h
-@@ -11,6 +11,10 @@
+@@ -16,6 +16,10 @@
  
- #include "wpabuf.h"
+ extern struct hapd_interfaces *global_ifaces;
  
 +extern void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
 +extern void (*wpa_hexdump_hook)(int level, const char *title,
@@ -588,7 +588,7 @@ as adding/removing interfaces.
  extern int wpa_debug_timestamp;
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -194,8 +194,20 @@ endif
+@@ -199,8 +199,20 @@ endif
  ifdef CONFIG_UBUS
  CFLAGS += -DUBUS_SUPPORT
  OBJS += ubus.o
@@ -610,7 +610,7 @@ as adding/removing interfaces.
  endif
  
  ifdef CONFIG_CODE_COVERAGE
-@@ -1053,6 +1065,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
+@@ -1058,6 +1070,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
  ifdef CONFIG_UBUS
  OBJS += ../src/ap/ubus.o
  endif
@@ -706,7 +706,7 @@ as adding/removing interfaces.
  #endif /* CONFIG_MATCH_IFACE */
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -555,12 +555,17 @@ const char * sae_get_password(struct hos
+@@ -563,12 +563,17 @@ const char * sae_get_password(struct hos
  			      struct sae_pt **s_pt,
  			      const struct sae_pk **s_pk)
  {
@@ -725,7 +725,7 @@ as adding/removing interfaces.
  	for (pw = hapd->conf->sae_passwords; pw; pw = pw->next) {
  		if (!is_broadcast_ether_addr(pw->peer_addr) &&
  		    (!sta ||
-@@ -582,12 +587,30 @@ const char * sae_get_password(struct hos
+@@ -590,12 +595,30 @@ const char * sae_get_password(struct hos
  		pt = hapd->conf->ssid.pt;
  	}
  
@@ -758,7 +758,7 @@ as adding/removing interfaces.
  		}
  	}
  
-@@ -3229,6 +3252,12 @@ static void handle_auth(struct hostapd_d
+@@ -3280,6 +3303,12 @@ static void handle_auth(struct hostapd_d
  		goto fail;
  	}
  
@@ -773,7 +773,7 @@ as adding/removing interfaces.
  
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -474,6 +474,11 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -475,6 +475,11 @@ void ap_free_sta(struct hostapd_data *ha
  	forced_memzero(sta->last_tk, WPA_TK_MAX_LEN);
  #endif /* CONFIG_TESTING_OPTIONS */
  
@@ -785,7 +785,7 @@ as adding/removing interfaces.
  	os_free(sta);
  }
  
-@@ -1507,6 +1512,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1516,6 +1521,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  
@@ -808,7 +808,7 @@ as adding/removing interfaces.
  	char *radius_cui; /* Chargeable-User-Identity from RADIUS */
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
-@@ -400,6 +400,7 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -407,6 +407,7 @@ static const u8 * hostapd_wpa_auth_get_p
  	struct sta_info *sta = ap_get_sta(hapd, addr);
  	const u8 *psk;
  
@@ -816,7 +816,7 @@ as adding/removing interfaces.
  	if (vlan_id)
  		*vlan_id = 0;
  	if (psk_len)
-@@ -446,13 +447,16 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -453,13 +454,16 @@ static const u8 * hostapd_wpa_auth_get_p
  	 * returned psk which should not be returned again.
  	 * logic list (all hostapd_get_psk; all sta->psk)
  	 */
@@ -834,7 +834,7 @@ as adding/removing interfaces.
  			if (pos->is_passphrase) {
  				if (pbkdf2_sha1(pos->passphrase,
  						hapd->conf->ssid.ssid,
-@@ -469,6 +473,8 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -476,6 +480,8 @@ static const u8 * hostapd_wpa_auth_get_p
  				break;
  			}
  		}
