@@ -4,10 +4,8 @@ Subject: [PATCH] hostapd: support optional argument for the -v switch of
  hostapd and wpa_supplicant to query build features, e.g. hostapd -veap to
  test whether 802.11i support is compiled in
 
-Index: hostapd-10.0.0/hostapd/main.c
-===================================================================
---- hostapd-10.0.0.orig/hostapd/main.c
-+++ hostapd-10.0.0/hostapd/main.c
+--- a/hostapd/main.c
++++ b/hostapd/main.c
 @@ -32,7 +32,7 @@
  #include "config_file.h"
  #include "eap_register.h"
@@ -22,7 +20,7 @@ Index: hostapd-10.0.0/hostapd/main.c
  	wpa_supplicant_event_global = hostapd_wpa_event_global;
  	for (;;) {
 -		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:qz:");
-+		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:g:G:qz:v::");
++		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:g:G:qv::z:");
  		if (c < 0)
  			break;
  		switch (c) {
@@ -35,10 +33,8 @@ Index: hostapd-10.0.0/hostapd/main.c
  			show_version();
  			exit(1);
  		case 'g':
-Index: hostapd-10.0.0/wpa_supplicant/main.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/main.c
-+++ hostapd-10.0.0/wpa_supplicant/main.c
+--- a/wpa_supplicant/main.c
++++ b/wpa_supplicant/main.c
 @@ -12,6 +12,7 @@
  #endif /* __linux__ */
  

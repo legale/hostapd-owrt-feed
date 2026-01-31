@@ -126,6 +126,61 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	ucv_gc(vm);
 }
 
+void wpas_ucode_ctrl_event(struct wpa_supplicant *wpa_s, const char *str, size_t len)
+{
+	uc_value_t *val;
+
+#define _EV_PREFIX "CTRL-EVENT-"
+	if (strncmp(str, _EV_PREFIX, sizeof(_EV_PREFIX) - 1) != 0)
+		return;
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("ctrl_event"))
+		return;
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new_length(str, len));
+	ucv_put(wpa_ucode_call(3));
+}
+
+bool wpas_ucode_bss_allowed(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
+{
+	uc_value_t *val;
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return true;
+
+	if (wpa_ucode_call_prepare("bss_allowed"))
+		return true;
+
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new(bss->bssid));
+	val = ucv_get(wpa_ucode_call(2));
+	return !ucv_int64_get(val);
+}
+
+void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
+			     const struct wps_credential *cred)
+{
+	uc_value_t *val;
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("wps_complete"))
+		return;
+
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new("wps_complete"));
+	ucv_put(wpa_ucode_call(2));
+}
+
 static const char *obj_stringval(uc_value_t *obj, const char *name)
 {
 	uc_value_t *val = ucv_object_get(obj, name, NULL);

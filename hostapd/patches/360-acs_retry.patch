@@ -1,0 +1,24 @@
+--- a/src/ap/acs.h
++++ b/src/ap/acs.h
+@@ -15,7 +15,7 @@
+ enum hostapd_chan_status acs_init(struct hostapd_iface *iface);
+ void acs_cleanup(struct hostapd_iface *iface);
+ 
+-#define ACS_SCAN_RETRY_MAX_COUNT	15
++#define ACS_SCAN_RETRY_MAX_COUNT	50
+ #define ACS_SCAN_RETRY_INTERVAL		5
+ 
+ #else /* CONFIG_ACS */
+--- a/src/drivers/driver_nl80211_scan.c
++++ b/src/drivers/driver_nl80211_scan.c
+@@ -426,6 +426,10 @@ int wpa_driver_nl80211_scan(struct i802_
+ 	if (ret) {
+ 		wpa_printf(MSG_DEBUG, "nl80211: Scan trigger failed: ret=%d "
+ 			   "(%s)", ret, strerror(-ret));
++
++		if (ret == -EBUSY)
++			goto fail;
++
+ 		if (ret == -EOPNOTSUPP &&
+ 		    drv->hostapd && is_ap_interface(drv->nlmode)) {
+ 			/*

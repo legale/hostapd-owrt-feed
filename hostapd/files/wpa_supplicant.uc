@@ -6,6 +6,7 @@ let ubus = libubus.connect();
 
 wpas.data.config = {};
 wpas.data.iface_phy = {};
+wpas.data.iface_ubus = {};
 wpas.data.macaddr_list = {};
 
 function iface_stop(iface)
@@ -306,6 +307,79 @@ wpas.data.ubus = ubus;
 wpas.data.obj = ubus.publish("wpa_supplicant", main_obj);
 wpas.udebug_set("wpa_supplicant", wpas.data.ubus);
 
+function iface_ubus_remove(ifname)
+{
+	let obj = wpas.data.iface_ubus[ifname];
+	if (!obj)
+		return;
+
+	obj.remove();
+	delete wpas.data.iface_ubus[ifname];
+}
+
+function iface_ubus_notify(ifname, event)
+{
+	let obj = wpas.data.iface_ubus[ifname];
+	if (!obj)
+		return;
+
+	obj.notify('ctrl-event', { event }, null, null, null, -1);
+}
+
+function iface_ubus_add(ifname)
+{
+	let ubus = wpas.data.ubus;
+
+	iface_ubus_remove(ifname);
+
+	let obj = ubus.publish(`wpa_supplicant.${ifname}`, {
+		reload: {
+			args: {},
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				iface.ctrl("RECONFIGURE");
+				return 0;
+			},
+		},
+		wps_start: {
+			args: { multi_ap: true },
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				iface.ctrl(`WPS_PBC multi_ap=${+req.args.multi_ap}`);
+				return 0;
+			},
+		},
+		wps_cancel: {
+			args: {},
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				iface.ctrl("WPS_CANCEL");
+				return 0;
+			},
+		},
+		control: {
+			args: { command: "" },
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				return { result: iface.ctrl(req.args.command) };
+			},
+		},
+	});
+	wpas.data.iface_ubus[ifname] = obj;
+}
+
 function iface_event(type, name, data) {
 	let ubus = wpas.data.ubus;
 
@@ -363,10 +437,15 @@ return {
 		wpas.ubus.disconnect();
 	},
 	iface_add: function(name, obj) {
+		iface_ubus_add(name);
 		iface_event("add", name);
 	},
 	iface_remove: function(name, obj) {
 		iface_event("remove", name);
+		iface_ubus_remove(name);
+	},
+	ctrl_event: function(name, iface, ev) {
+		iface_ubus_notify(name, ev);
 	},
 	state: function(ifname, iface, state) {
 		let phy = wpas.data.iface_phy[ifname];

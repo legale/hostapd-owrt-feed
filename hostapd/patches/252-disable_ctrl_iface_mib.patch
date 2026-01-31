@@ -2,10 +2,8 @@ From: Felix Fietkau <nbd@openwrt.org>
 Date: Fri, 18 Mar 2011 02:15:52 +0000
 Subject: [PATCH] Remove some unnecessary control interface functionality
 
-Index: hostapd-10.0.0/hostapd/Makefile
-===================================================================
---- hostapd-10.0.0.orig/hostapd/Makefile
-+++ hostapd-10.0.0/hostapd/Makefile
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
 @@ -225,6 +225,9 @@ endif
  ifdef CONFIG_NO_CTRL_IFACE
  CFLAGS += -DCONFIG_NO_CTRL_IFACE
@@ -16,10 +14,8 @@ Index: hostapd-10.0.0/hostapd/Makefile
  ifeq ($(CONFIG_CTRL_IFACE), udp)
  CFLAGS += -DCONFIG_CTRL_IFACE_UDP
  else
-Index: hostapd-10.0.0/hostapd/ctrl_iface.c
-===================================================================
---- hostapd-10.0.0.orig/hostapd/ctrl_iface.c
-+++ hostapd-10.0.0/hostapd/ctrl_iface.c
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
 @@ -3963,6 +3963,7 @@ static int hostapd_ctrl_iface_receive_pr
  						      reply_size);
  	} else if (os_strcmp(buf, "STATUS-DRIVER") == 0) {
@@ -36,10 +32,8 @@ Index: hostapd-10.0.0/hostapd/ctrl_iface.c
  	} else if (os_strcmp(buf, "ATTACH") == 0) {
  		if (hostapd_ctrl_iface_attach(hapd, from, fromlen, NULL))
  			reply_len = -1;
-Index: hostapd-10.0.0/src/ap/ctrl_iface_ap.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/ctrl_iface_ap.c
-+++ hostapd-10.0.0/src/ap/ctrl_iface_ap.c
+--- a/src/ap/ctrl_iface_ap.c
++++ b/src/ap/ctrl_iface_ap.c
 @@ -28,6 +28,26 @@
  #include "taxonomy.h"
  #include "wnm_ap.h"
@@ -106,9 +100,8 @@ Index: hostapd-10.0.0/src/ap/ctrl_iface_ap.c
  		len += ret;
  	}
  
--	if (hostapd_is_ht_enabled(hapd) && mode) {
-+	#ifdef CONFIG_CTRL_IFACE_MIB
-+if (hostapd_is_ht_enabled(hapd) && mode) {
++#ifdef CONFIG_CTRL_IFACE_MIB
+ 	if (hostapd_is_ht_enabled(hapd) && mode) {
  		len = hostapd_write_ht_mcs_bitmask(buf, buflen, len,
  						   mode->mcs_set);
  	}
@@ -116,10 +109,8 @@ Index: hostapd-10.0.0/src/ap/ctrl_iface_ap.c
  
  	if (hapd->current_rates && hapd->num_rates) {
  		ret = os_snprintf(buf + len, buflen - len, "supported_rates=");
-Index: hostapd-10.0.0/src/ap/ieee802_1x.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/ieee802_1x.c
-+++ hostapd-10.0.0/src/ap/ieee802_1x.c
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
 @@ -2837,6 +2837,7 @@ static const char * bool_txt(bool val)
  	return val ? "TRUE" : "FALSE";
  }
@@ -136,10 +127,8 @@ Index: hostapd-10.0.0/src/ap/ieee802_1x.c
  
  #ifdef CONFIG_HS20
  static void ieee802_1x_wnm_notif_send(void *eloop_ctx, void *timeout_ctx)
-Index: hostapd-10.0.0/src/ap/wpa_auth.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/wpa_auth.c
-+++ hostapd-10.0.0/src/ap/wpa_auth.c
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
 @@ -6464,6 +6464,7 @@ static const char * wpa_bool_txt(int val
  	return val ? "TRUE" : "FALSE";
  }
@@ -157,10 +146,8 @@ Index: hostapd-10.0.0/src/ap/wpa_auth.c
  
  void wpa_auth_countermeasures_start(struct wpa_authenticator *wpa_auth)
  {
-Index: hostapd-10.0.0/src/rsn_supp/wpa.c
-===================================================================
---- hostapd-10.0.0.orig/src/rsn_supp/wpa.c
-+++ hostapd-10.0.0/src/rsn_supp/wpa.c
+--- a/src/rsn_supp/wpa.c
++++ b/src/rsn_supp/wpa.c
 @@ -4247,6 +4247,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
  }
  
@@ -178,10 +165,8 @@ Index: hostapd-10.0.0/src/rsn_supp/wpa.c
  #endif /* CONFIG_CTRL_IFACE */
  
  
-Index: hostapd-10.0.0/wpa_supplicant/Makefile
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/Makefile
-+++ hostapd-10.0.0/wpa_supplicant/Makefile
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
 @@ -1059,6 +1059,9 @@ ifdef CONFIG_FILS
  OBJS += ../src/ap/fils_hlp.o
  endif
@@ -192,10 +177,8 @@ Index: hostapd-10.0.0/wpa_supplicant/Makefile
  OBJS += ../src/ap/ctrl_iface_ap.o
  endif
  
-Index: hostapd-10.0.0/wpa_supplicant/ap.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/ap.c
-+++ hostapd-10.0.0/wpa_supplicant/ap.c
+--- a/wpa_supplicant/ap.c
++++ b/wpa_supplicant/ap.c
 @@ -1527,7 +1527,7 @@ int wpas_ap_wps_nfc_report_handover(stru
  #endif /* CONFIG_WPS */
  
@@ -205,10 +188,8 @@ Index: hostapd-10.0.0/wpa_supplicant/ap.c
  
  int ap_ctrl_iface_sta_first(struct wpa_supplicant *wpa_s,
  			    char *buf, size_t buflen)
-Index: hostapd-10.0.0/wpa_supplicant/ctrl_iface.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/ctrl_iface.c
-+++ hostapd-10.0.0/wpa_supplicant/ctrl_iface.c
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
 @@ -2405,7 +2405,7 @@ static int wpa_supplicant_ctrl_iface_sta
  			pos += ret;
  		}

@@ -3,10 +3,8 @@ Date: Fri, 20 Apr 2018 07:41:03 +0200
 Subject: [PATCH] Allow HT40 also on 2.4GHz if noscan option is set, which also
  skips secondary channel scan just like noscan works in AP mode.
 
-Index: hostapd-10.0.0/wpa_supplicant/config.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/config.c
-+++ hostapd-10.0.0/wpa_supplicant/config.c
+--- a/wpa_supplicant/config.c
++++ b/wpa_supplicant/config.c
 @@ -2702,6 +2702,7 @@ static const struct parse_data ssid_fiel
  #else /* CONFIG_MESH */
  	{ INT_RANGE(mode, 0, 4) },
@@ -15,22 +13,18 @@ Index: hostapd-10.0.0/wpa_supplicant/config.c
  	{ INT_RANGE(proactive_key_caching, 0, 1) },
  	{ INT_RANGE(disabled, 0, 2) },
  	{ STR(id_str) },
-Index: hostapd-10.0.0/wpa_supplicant/config_file.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/config_file.c
-+++ hostapd-10.0.0/wpa_supplicant/config_file.c
+--- a/wpa_supplicant/config_file.c
++++ b/wpa_supplicant/config_file.c
 @@ -885,6 +885,7 @@ static void wpa_config_write_network(FIL
  	INT(mode);
  #ifdef CONFIG_MESH
  	INT(no_auto_peer);
-+INT(noscan);
++	INT(noscan);
  	INT_DEF(mesh_fwding, DEFAULT_MESH_FWDING);
  #endif /* CONFIG_MESH */
  	INT(frequency);
-Index: hostapd-10.0.0/wpa_supplicant/config_ssid.h
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/config_ssid.h
-+++ hostapd-10.0.0/wpa_supplicant/config_ssid.h
+--- a/wpa_supplicant/config_ssid.h
++++ b/wpa_supplicant/config_ssid.h
 @@ -1075,6 +1075,8 @@ struct wpa_ssid {
  	 */
  	int no_auto_peer;
@@ -40,10 +34,8 @@ Index: hostapd-10.0.0/wpa_supplicant/config_ssid.h
  	/**
  	 * mesh_rssi_threshold - Set mesh parameter mesh_rssi_threshold (dBm)
  	 *
-Index: hostapd-10.0.0/wpa_supplicant/mesh.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/mesh.c
-+++ hostapd-10.0.0/wpa_supplicant/mesh.c
+--- a/wpa_supplicant/mesh.c
++++ b/wpa_supplicant/mesh.c
 @@ -517,6 +517,8 @@ static int wpa_supplicant_mesh_init(stru
  			   frequency);
  		goto out_free;
@@ -53,10 +45,8 @@ Index: hostapd-10.0.0/wpa_supplicant/mesh.c
  
  	if (ssid->mesh_basic_rates == NULL) {
  		/*
-Index: hostapd-10.0.0/wpa_supplicant/wpa_supplicant.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/wpa_supplicant.c
-+++ hostapd-10.0.0/wpa_supplicant/wpa_supplicant.c
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
 @@ -3100,7 +3100,7 @@ static bool ibss_mesh_can_use_vht(struct
  				  const struct wpa_ssid *ssid,
  				  struct hostapd_hw_modes *mode)
@@ -66,7 +56,7 @@ Index: hostapd-10.0.0/wpa_supplicant/wpa_supplicant.c
  		return false;
  
  	if (!drv_supports_vht(wpa_s, ssid))
-@@ -3175,7 +3175,7 @@ static void ibss_mesh_select_40mhz(struc
+@@ -3174,7 +3174,7 @@ static void ibss_mesh_select_40mhz(struc
  	int i, res;
  	unsigned int j;
  	static const int ht40plus_5ghz[] = {
@@ -75,7 +65,7 @@ Index: hostapd-10.0.0/wpa_supplicant/wpa_supplicant.c
  		149, 157, 165, 173, 184, 192
  	};
  	static const int ht40plus_6ghz[] = {
-@@ -3532,7 +3532,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -3527,7 +3527,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
  	int ieee80211_mode = wpas_mode_to_ieee80211_mode(ssid->mode);
  	enum hostapd_hw_mode hw_mode;
  	struct hostapd_hw_modes *mode = NULL;
@@ -84,11 +74,11 @@ Index: hostapd-10.0.0/wpa_supplicant/wpa_supplicant.c
  	u8 channel;
  	bool is_6ghz, is_24ghz;
  	bool dfs_enabled = wpa_s->conf->country[0] && (wpa_s->drv_flags & WPA_DRIVER_FLAGS_RADAR);
-@@ -3576,6 +3576,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -3571,6 +3571,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
  		freq->he_enabled = ibss_mesh_can_use_he(wpa_s, ssid, mode,
  							ieee80211_mode);
  	freq->channel = channel;
-+if (mode->mode == HOSTAPD_MODE_IEEE80211G && ssid->noscan)
++	if (mode->mode == HOSTAPD_MODE_IEEE80211G && ssid->noscan)
 +		ibss_mesh_select_40mhz(wpa_s, ssid, mode, freq, obss_scan, is_6ghz, dfs_enabled);
  	/* Setup higher BW only for 5 and 6 GHz */
  	if (mode->mode == HOSTAPD_MODE_IEEE80211A) {

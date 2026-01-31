@@ -5,10 +5,8 @@ Subject: [PATCH] hostapd: initial prototype of an ubus binding
 Supports listing, removing and banning clients, and hooking into
 probe/assoc/auth requests via object subscribe.
 
-Index: hostapd-10.0.0/hostapd/Makefile
-===================================================================
---- hostapd-10.0.0.orig/hostapd/Makefile
-+++ hostapd-10.0.0/hostapd/Makefile
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
 @@ -170,6 +170,12 @@ OBJS += ../src/common/hw_features_common
  
  OBJS += ../src/eapol_auth/eapol_auth_sm.o
@@ -22,10 +20,8 @@ Index: hostapd-10.0.0/hostapd/Makefile
  
  ifdef CONFIG_CODE_COVERAGE
  CFLAGS += -O0 -fprofile-arcs -ftest-coverage -U_FORTIFY_SOURCE
-Index: hostapd-10.0.0/src/ap/airtime_policy.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/airtime_policy.c
-+++ hostapd-10.0.0/src/ap/airtime_policy.c
+--- a/src/ap/airtime_policy.c
++++ b/src/ap/airtime_policy.c
 @@ -112,8 +112,14 @@ static void set_sta_weights(struct hosta
  {
  	struct sta_info *sta;
@@ -55,10 +51,8 @@ Index: hostapd-10.0.0/src/ap/airtime_policy.c
  		if (weight)
  			return sta_set_airtime_weight(hapd, sta, weight);
  	}
-Index: hostapd-10.0.0/src/ap/beacon.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/beacon.c
-+++ hostapd-10.0.0/src/ap/beacon.c
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
 @@ -1464,6 +1464,12 @@ void handle_probe_req(struct hostapd_dat
  	int mld_id;
  	u16 links;
@@ -85,10 +79,8 @@ Index: hostapd-10.0.0/src/ap/beacon.c
  	/* TODO: verify that supp_rates contains at least one matching rate
  	 * with AP configuration */
  
-Index: hostapd-10.0.0/src/ap/dfs.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/dfs.c
-+++ hostapd-10.0.0/src/ap/dfs.c
+--- a/src/ap/dfs.c
++++ b/src/ap/dfs.c
 @@ -1295,6 +1295,8 @@ int hostapd_dfs_pre_cac_expired(struct h
  		"freq=%d ht_enabled=%d chan_offset=%d chan_width=%d cf1=%d cf2=%d",
  		freq, ht_enabled, chan_offset, chan_width, cf1, cf2);
@@ -98,21 +90,19 @@ Index: hostapd-10.0.0/src/ap/dfs.c
  	/* Proceed only if DFS is not offloaded to the driver */
  	if (iface->drv_flags & WPA_DRIVER_FLAGS_DFS_OFFLOAD)
  		return 0;
-Index: hostapd-10.0.0/src/ap/drv_callbacks.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/drv_callbacks.c
-+++ hostapd-10.0.0/src/ap/drv_callbacks.c
-@@ -332,6 +332,10 @@ int hostapd_notif_assoc(struct hostapd_d
- 	struct hostapd_iface *iface = hapd->iface;
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -333,6 +333,10 @@ int hostapd_notif_assoc(struct hostapd_d
  #endif /* CONFIG_OWE */
  	bool updated = false;
-+struct hostapd_ubus_request req = {
+ 	bool driver_acl;
++	struct hostapd_ubus_request req = {
 +		.type = HOSTAPD_UBUS_ASSOC_REQ,
 +		.addr = addr,
 +	};
- 	bool driver_acl;
  
  #ifdef CONFIG_P2P
+ 	if (hapd->p2p_group && (!hapd->started || hapd->disabled)) {
 @@ -523,6 +527,12 @@ int hostapd_notif_assoc(struct hostapd_d
  	}
  #endif /* CONFIG_IEEE80211BE */
@@ -134,10 +124,8 @@ Index: hostapd-10.0.0/src/ap/drv_callbacks.c
  	} else if (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_DFS_OFFLOAD) {
  		/* Complete AP configuration for the first bring up. */
  		if (is_dfs0 > 0 &&
-Index: hostapd-10.0.0/src/ap/hostapd.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/hostapd.c
-+++ hostapd-10.0.0/src/ap/hostapd.c
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
 @@ -492,6 +492,7 @@ void hostapd_free_hapd_data(struct hosta
  	hapd->beacon_set_done = 0;
  
@@ -171,7 +159,7 @@ Index: hostapd-10.0.0/src/ap/hostapd.c
  
  	if (iface->is_no_ir) {
  		hostapd_set_state(iface, HAPD_IFACE_NO_IR);
-@@ -3550,6 +3555,7 @@ void hostapd_interface_deinit_free(struc
+@@ -3553,6 +3558,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -179,10 +167,8 @@ Index: hostapd-10.0.0/src/ap/hostapd.c
  	hostapd_interface_deinit(iface);
  	wpa_printf(MSG_DEBUG, "%s: driver=%p drv_priv=%p -> hapd_deinit",
  		   __func__, driver, drv_priv);
-Index: hostapd-10.0.0/src/ap/hostapd.h
-===================================================================
---- hostapd-10.0.0.orig/src/ap/hostapd.h
-+++ hostapd-10.0.0/src/ap/hostapd.h
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
 @@ -18,6 +18,7 @@
  #include "utils/list.h"
  #include "ap_config.h"
@@ -199,18 +185,16 @@ Index: hostapd-10.0.0/src/ap/hostapd.h
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -779,6 +781,7 @@ hostapd_alloc_bss_data(struct hostapd_if
- 		       struct hostapd_bss_config *bss);
+@@ -780,6 +782,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+ int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon);
  int hostapd_setup_interface(struct hostapd_iface *iface);
  int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err);
 +void hostapd_set_own_neighbor_report(struct hostapd_data *hapd);
  void hostapd_interface_deinit(struct hostapd_iface *iface);
  void hostapd_interface_free(struct hostapd_iface *iface);
  struct hostapd_iface * hostapd_alloc_iface(void);
-Index: hostapd-10.0.0/src/ap/ieee802_11.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/ieee802_11.c
-+++ hostapd-10.0.0/src/ap/ieee802_11.c
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
 @@ -3284,7 +3284,7 @@ static void handle_auth(struct hostapd_d
  	u16 auth_alg, auth_transaction, status_code;
  	u16 resp = WLAN_STATUS_SUCCESS;
@@ -298,10 +282,8 @@ Index: hostapd-10.0.0/src/ap/ieee802_11.c
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (!sta) {
  		wpa_msg(hapd->msg_ctx, MSG_DEBUG, "Station " MACSTR
-Index: hostapd-10.0.0/src/ap/rrm.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/rrm.c
-+++ hostapd-10.0.0/src/ap/rrm.c
+--- a/src/ap/rrm.c
++++ b/src/ap/rrm.c
 @@ -89,6 +89,9 @@ static void hostapd_handle_beacon_report
  		return;
  	wpa_msg(hapd->msg_ctx, MSG_INFO, BEACON_RESP_RX MACSTR " %u %02x %s",
@@ -321,10 +303,8 @@ Index: hostapd-10.0.0/src/ap/rrm.c
  		break;
  	default:
  		wpa_printf(MSG_DEBUG, "RRM action %u is not supported",
-Index: hostapd-10.0.0/src/ap/sta_info.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/sta_info.c
-+++ hostapd-10.0.0/src/ap/sta_info.c
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
 @@ -604,6 +604,7 @@ void ap_handle_timer(void *eloop_ctx, vo
  		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
@@ -341,7 +321,7 @@ Index: hostapd-10.0.0/src/ap/sta_info.c
  		ap_free_sta(hapd, sta);
  		break;
  	}
-@@ -1780,16 +1782,29 @@ void ap_sta_set_authorized_event(struct
+@@ -1780,17 +1782,30 @@ void ap_sta_set_authorized_event(struct
  		os_snprintf(buf, sizeof(buf), MACSTR, MAC2STR(sta->addr));
  
  	if (authorized) {
@@ -361,16 +341,17 @@ Index: hostapd-10.0.0/src/ap/sta_info.c
  		char dpp_pkhash_buf[100];
  		char keyid_buf[100];
  		char ip_addr[100];
-+		char alg_buf[100];
  		char vlanid_buf[20];
++		char alg_buf[100];
  
  		dpp_pkhash_buf[0] = '\0';
  		keyid_buf[0] = '\0';
  		ip_addr[0] = '\0';
-+		alg_buf[0] = '\0';
  		vlanid_buf[0] = '\0';
++		alg_buf[0] = '\0';
  
  #ifdef CONFIG_P2P
+ 		if (wpa_auth_get_ip_addr(sta->wpa_sm, ip_addr_buf) == 0) {
 @@ -1803,6 +1818,13 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  		WIFIMON_OK(S_AUTHORIZED, "authorized=%d mac=" MACSTR " bssid=" MACSTR " %s", authorized, MAC2STR(sta->addr), MAC2STR(hapd->own_addr), ip_addr);
@@ -385,20 +366,13 @@ Index: hostapd-10.0.0/src/ap/sta_info.c
  		keyid = ap_sta_wpa_get_keyid(hapd, sta);
  		if (keyid) {
  			os_snprintf(keyid_buf, sizeof(keyid_buf),
-@@ -1814,6 +1836,7 @@ void ap_sta_set_authorized_event(struct
- 			const char *prefix = " dpp_pkhash=";
- 			size_t plen = os_strlen(prefix);
- 
-+hostapd_ubus_notify_authorized(hapd, sta, auth_alg);
- 			os_strlcpy(dpp_pkhash_buf, prefix,
- 				   sizeof(dpp_pkhash_buf));
- 			wpa_snprintf_hex(&dpp_pkhash_buf[plen],
-@@ -1827,22 +1850,24 @@ void ap_sta_set_authorized_event(struct
+@@ -1827,17 +1849,19 @@ void ap_sta_set_authorized_event(struct
  				    " vlanid=%u", sta->vlan_id);
  #endif /* CONFIG_NO_VLAN */
  
 -		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_CONNECTED "%s%s%s%s%s",
 -			buf, ip_addr, keyid_buf, dpp_pkhash_buf, vlanid_buf);
++		hostapd_ubus_notify_authorized(hapd, sta, auth_alg);
 +		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_CONNECTED "%s%s%s%s%s%s",
 +			buf, ip_addr, keyid_buf, dpp_pkhash_buf, vlanid_buf, alg_buf);
  
@@ -412,20 +386,12 @@ Index: hostapd-10.0.0/src/ap/sta_info.c
 +					  dpp_pkhash_buf, vlanid_buf, alg_buf);
  	} else {
  		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
-+hostapd_ubus_notify(hapd, "disassoc", sta->addr);
++		hostapd_ubus_notify(hapd, "disassoc", sta->addr);
  
  		if (hapd->msg_ctx_parent &&
  		    hapd->msg_ctx_parent != hapd->msg_ctx)
- 			wpa_msg_no_global(hapd->msg_ctx_parent, MSG_INFO,
- 					  AP_STA_DISCONNECTED "%s", buf);
-+hostapd_ubus_notify(hapd, "disassoc", sta->addr);
- 	}
- 
- 	if (hapd->sta_authorized_cb)
-Index: hostapd-10.0.0/src/ap/sta_info.h
-===================================================================
---- hostapd-10.0.0.orig/src/ap/sta_info.h
-+++ hostapd-10.0.0/src/ap/sta_info.h
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
 @@ -302,6 +302,7 @@ struct sta_info {
  #endif /* CONFIG_TESTING_OPTIONS */
  #ifdef CONFIG_AIRTIME_POLICY
@@ -434,10 +400,8 @@ Index: hostapd-10.0.0/src/ap/sta_info.h
  	struct os_reltime backlogged_until;
  #endif /* CONFIG_AIRTIME_POLICY */
  
-Index: hostapd-10.0.0/src/ap/vlan_init.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/vlan_init.c
-+++ hostapd-10.0.0/src/ap/vlan_init.c
+--- a/src/ap/vlan_init.c
++++ b/src/ap/vlan_init.c
 @@ -22,6 +22,7 @@
  static int vlan_if_add(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
  		       int existsok)
@@ -474,10 +438,8 @@ Index: hostapd-10.0.0/src/ap/vlan_init.c
  	return hostapd_vlan_if_remove(hapd, vlan->ifname);
  }
  
-Index: hostapd-10.0.0/src/ap/wnm_ap.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/wnm_ap.c
-+++ hostapd-10.0.0/src/ap/wnm_ap.c
+--- a/src/ap/wnm_ap.c
++++ b/src/ap/wnm_ap.c
 @@ -479,7 +479,8 @@ static void ieee802_11_rx_bss_trans_mgmt
  		MAC2STR(addr), reason, hex ? " neighbor=" : "", hex);
  	os_free(hex);
@@ -516,10 +478,8 @@ Index: hostapd-10.0.0/src/ap/wnm_ap.c
  	wpa_hexdump(MSG_DEBUG, "WNM: BSS Transition Candidate List Entries",
  		    pos, end - pos);
  }
-Index: hostapd-10.0.0/src/ap/wpa_auth_glue.c
-===================================================================
---- hostapd-10.0.0.orig/src/ap/wpa_auth_glue.c
-+++ hostapd-10.0.0/src/ap/wpa_auth_glue.c
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
 @@ -406,6 +406,7 @@ static void hostapd_wpa_auth_psk_failure
  
  	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_POSSIBLE_PSK_MISMATCH MACSTR,
@@ -528,10 +488,8 @@ Index: hostapd-10.0.0/src/ap/wpa_auth_glue.c
  }
  
  
-Index: hostapd-10.0.0/src/utils/eloop.c
-===================================================================
---- hostapd-10.0.0.orig/src/utils/eloop.c
-+++ hostapd-10.0.0/src/utils/eloop.c
+--- a/src/utils/eloop.c
++++ b/src/utils/eloop.c
 @@ -77,6 +77,9 @@ struct eloop_sock_table {
  struct eloop_data {
  	int max_sock;
@@ -580,10 +538,8 @@ Index: hostapd-10.0.0/src/utils/eloop.c
  
  void eloop_terminate(void)
  {
-Index: hostapd-10.0.0/src/utils/eloop.h
-===================================================================
---- hostapd-10.0.0.orig/src/utils/eloop.h
-+++ hostapd-10.0.0/src/utils/eloop.h
+--- a/src/utils/eloop.h
++++ b/src/utils/eloop.h
 @@ -65,6 +65,9 @@ typedef void (*eloop_timeout_handler)(vo
   */
  typedef void (*eloop_signal_handler)(int sig, void *signal_ctx);
@@ -613,10 +569,8 @@ Index: hostapd-10.0.0/src/utils/eloop.h
  /**
   * eloop_run - Start the event loop
   *
-Index: hostapd-10.0.0/src/utils/uloop.c
-===================================================================
 --- /dev/null
-+++ hostapd-10.0.0/src/utils/uloop.c
++++ b/src/utils/uloop.c
 @@ -0,0 +1,64 @@
 +#include <libubox/uloop.h>
 +#include "includes.h"
@@ -682,38 +636,8 @@ Index: hostapd-10.0.0/src/utils/uloop.c
 +
 +	eloop_register_cb(uloop_poll_handler, uloop_timeout_poll_handler);
 +}
-Index: hostapd-10.0.0/wpa_supplicant/Makefile
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/Makefile
-+++ hostapd-10.0.0/wpa_supplicant/Makefile
-@@ -196,6 +196,13 @@ ifdef CONFIG_EAPOL_TEST
- CFLAGS += -Werror -DEAPOL_TEST
- endif
- 
-+ifdef CONFIG_UBUS
-+CFLAGS += -DUBUS_SUPPORT
-+OBJS += ubus.o
-+OBJS += ../src/utils/uloop.o
-+LIBS += -lubox -lubus
-+endif
-+
- ifdef CONFIG_CODE_COVERAGE
- CFLAGS += -O0 -fprofile-arcs -ftest-coverage -U_FORTIFY_SOURCE
- LIBS += -lgcov
-@@ -1063,6 +1070,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
- CFLAGS += -DCONFIG_CTRL_IFACE_MIB
- endif
- OBJS += ../src/ap/ctrl_iface_ap.o
-+ifdef CONFIG_UBUS
-+OBJS += ../src/ap/ubus.o
-+endif
- endif
- 
- CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
-Index: hostapd-10.0.0/wpa_supplicant/main.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/main.c
-+++ hostapd-10.0.0/wpa_supplicant/main.c
+--- a/wpa_supplicant/main.c
++++ b/wpa_supplicant/main.c
 @@ -214,7 +214,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
@@ -723,97 +647,3 @@ Index: hostapd-10.0.0/wpa_supplicant/main.c
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -279,6 +279,9 @@ int main(int argc, char *argv[])
- 			params.conf_p2p_dev = optarg;
- 			break;
- #endif /* CONFIG_P2P */
-+		case 'n':
-+			iface_count = 0;
-+			break;
- 		case 'o':
- 			params.override_driver = optarg;
- 			break;
-Index: hostapd-10.0.0/wpa_supplicant/wpa_supplicant.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/wpa_supplicant.c
-+++ hostapd-10.0.0/wpa_supplicant/wpa_supplicant.c
-@@ -8381,6 +8381,8 @@ struct wpa_supplicant * wpa_supplicant_a
- 	}
- #endif /* CONFIG_P2P */
- 
-+	wpas_ubus_add_bss(wpa_s);
-+
- 	return wpa_s;
- }
- 
-@@ -8407,6 +8409,8 @@ int wpa_supplicant_remove_iface(struct w
- 	struct wpa_supplicant *parent = wpa_s->parent;
- #endif /* CONFIG_MESH */
- 
-+	wpas_ubus_free_bss(wpa_s);
-+
- 	/* Remove interface from the global list of interfaces */
- 	prev = global->ifaces;
- 	if (prev == wpa_s) {
-@@ -8764,8 +8768,12 @@ int wpa_supplicant_run(struct wpa_global
- 	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
- 	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
- 
-+	wpas_ubus_add(global);
-+
- 	eloop_run();
- 
-+	wpas_ubus_free(global);
-+
- 	return 0;
- }
- 
-Index: hostapd-10.0.0/wpa_supplicant/wpa_supplicant_i.h
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/wpa_supplicant_i.h
-+++ hostapd-10.0.0/wpa_supplicant/wpa_supplicant_i.h
-@@ -21,6 +21,7 @@
- #include "config_ssid.h"
- #include "wmm_ac.h"
- #include "pasn/pasn_common.h"
-+#include "ubus.h"
- 
- extern const char *const wpa_supplicant_version;
- extern const char *const wpa_supplicant_license;
-@@ -336,6 +337,7 @@ struct wpa_global {
- #endif /* CONFIG_WIFI_DISPLAY */
- 
- 	struct psk_list_entry *add_psk; /* From group formation */
-+struct ubus_object ubus_global;
- 
- #ifdef CONFIG_PROCESS_COORDINATION
- 	struct proc_coord *pc;
-@@ -718,6 +720,7 @@ struct wpa_supplicant {
- 	unsigned char own_addr[ETH_ALEN];
- 	unsigned char perm_addr[ETH_ALEN];
- 	char ifname[100];
-+	struct wpas_ubus_bss ubus;
- #ifdef CONFIG_MATCH_IFACE
- 	int matched;
- #endif /* CONFIG_MATCH_IFACE */
-Index: hostapd-10.0.0/wpa_supplicant/wps_supplicant.c
-===================================================================
---- hostapd-10.0.0.orig/wpa_supplicant/wps_supplicant.c
-+++ hostapd-10.0.0/wpa_supplicant/wps_supplicant.c
-@@ -33,6 +33,7 @@
- #include "p2p/p2p.h"
- #include "p2p_supplicant.h"
- #include "wps_supplicant.h"
-+#include "ubus.h"
- 
- 
- #ifndef WPS_PIN_SCAN_IGNORE_SEL_REG
-@@ -401,6 +402,8 @@ static int wpa_supplicant_wps_cred(void
- 	wpa_hexdump_key(MSG_DEBUG, "WPS: Received Credential attribute",
- 			cred->cred_attr, cred->cred_attr_len);
- 
-+	wpas_ubus_notify(wpa_s, cred);
-+
- 	if (wpa_s->conf->wps_cred_processing == 1)
- 		return 0;
- 
