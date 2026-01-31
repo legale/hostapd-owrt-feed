@@ -1,0 +1,21 @@
+MLD level socket can take 'LINKID <link id>'. Add changes to pass this via
+hostapd_cli. User needs to give "link_id=<link_id>" in post fix fashion in
+the command in order to pass this link_id from cli.
+For example -
+$ hostapd_cli -i wlan0 status link_id=0 | grep freq=
+freq=2437
+$ hostapd_cli -i wlan0
+...
+Interactive mode
+>*ping*PONG
+>**>*status link_id=0*Command for 'LINKID 0'
+state=ENABLED
+phy=phy0
+freq=2437
+...
+Signed-off-by: Aditya Kumar Singh <[quic_adisi at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+---
+hostapd/hostapd_cli.c | 39 +++++++++++++++++++++++++++
+src/common/wpa_ctrl.c | 63 +++++++++++++++++++++++++++++++++++++++++++
+src/common/wpa_ctrl.h | 3 +++
+3 files changed, 105 insertions(+)

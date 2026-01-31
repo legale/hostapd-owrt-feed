@@ -1,0 +1,21 @@
+Add MLD level 'status' command. Currently each link level socket has got
+'status' command. When the same is passed on MLD level socket without any
+link id, it routes it to first BSS of the MLD if available. Handle this
+now properly.
+If link id is not passed then it will be treated as MLD level status
+command.
+$ hostapd_cli -i wlan0
+....
+Interactive mode
+>*status*name=wlan0
+mld_address=AA:BB:CC:DD:EE:FF
+num_links=2
+LINK INFORMATION
+link_id=0
+link_addr=AA:BB:CC:DD:EE:EE
+link_id=1
+link_addr=AA:BB:CC:DD:FF:FF
+Signed-off-by: Aditya Kumar Singh <[quic_adisi at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+---
+hostapd/ctrl_iface.c | 46 ++++++++++++++++++++++++++++++++++++++++++++
+1 file changed, 46 insertions(+)

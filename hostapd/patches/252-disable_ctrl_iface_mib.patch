@@ -106,9 +106,8 @@ Index: hostapd-10.0.0/src/ap/ctrl_iface_ap.c
  		len += ret;
  	}
  
--	if (hostapd_is_ht_enabled(hapd) && mode) {
-+	#ifdef CONFIG_CTRL_IFACE_MIB
-+if (hostapd_is_ht_enabled(hapd) && mode) {
++#ifdef CONFIG_CTRL_IFACE_MIB
+ 	if (hostapd_is_ht_enabled(hapd) && mode) {
  		len = hostapd_write_ht_mcs_bitmask(buf, buflen, len,
  						   mode->mcs_set);
  	}

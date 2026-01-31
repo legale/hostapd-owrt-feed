@@ -1,0 +1,20 @@
+From: Karthikeyan Kathirvel <[quic_kathirve at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+Create link based control sockets to access the link based commands
+through hostapd_cli. This will create the link interfaces in the name of
+wlan<X>_link<X>
+Example:
+To fetch link 0 status from wlan0, below command can be used -
+$ hostapd_cli -i wlan0 -l 0 status
+On failure of link/interface selection, below error will be observed
+$ hostapd_cli -i wlan0 -l 2 status
+Failed to connect to hostapd - wpa_ctrl_open: No such file or directory
+Signed-off-by: Karthikeyan Kathirvel <[quic_kathirve at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+Co-developed-by: Aditya Kumar Singh <[quic_adisi at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+Signed-off-by: Aditya Kumar Singh <[quic_adisi at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+---
+hostapd/ctrl_iface.c | 16 ++++++++++++++--
+hostapd/hostapd_cli.c | 31 ++++++++++++++++++++++++++++---
+src/ap/hostapd.c | 28 ++++++++++++++++++++++++++++
+src/ap/hostapd.h | 5 +++++
+src/common/wpa_ctrl.h | 4 ++++
+5 files changed, 79 insertions(+), 5 deletions(-)

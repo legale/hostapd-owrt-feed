@@ -1,0 +1,25 @@
+With MLO, each link have socket created with "<ifname>_link<link id>" under
+the control interface directory.
+Introduce a MLD level socket - "<ifname>" as well under the same control
+interface directory. This socket can be used to pass the command to its
+partner links directly instead of using the link level socket. Link ID
+needs to be passed with the command in a prefix way. If no Link ID is
+provided then first link ID is selected.
+The structure of the command is -
+"LINKID <link id> <COMMAND APPLICABALE FOR THE LINK>"
+Directory looks something like this -
+$ ls /var/run/hostapd/
+wlan0
+wlan0_link0
+wlan0_link1
+wlan0 here is the MLD level socket. Rest are each link level.
+This would also help to maintain backwards compatibility with applications
+which looks for <ifname> under the control interface directory.`
+Signed-off-by: Aditya Kumar Singh <[quic_adisi at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+---
+hostapd/ctrl_iface.c | 322 +++++++++++++++++++++++++++++++++++++++++++
+hostapd/ctrl_iface.h | 4 +
+hostapd/main.c | 5 +
+src/ap/hostapd.c | 11 ++
+src/ap/hostapd.h | 6 +
+5 files changed, 348 insertions(+)

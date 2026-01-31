@@ -1,0 +1,8 @@
+Add simple test case to bring up a 2 link MLD and get the status of each
+link via the MLD level socket.
+Signed-off-by: Aditya Kumar Singh <[quic_adisi at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+---
+tests/hwsim/mld.py | 36 ++++++++++++++++++++++++++++++++++++
+tests/hwsim/test_eht.py | 34 ++++++++++++++++++++++++++++++++++
+2 files changed, 70 insertions(+)
+create mode 100644 tests/hwsim/mld.py

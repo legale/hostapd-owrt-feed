@@ -22,7 +22,7 @@ Index: hostapd-10.0.0/hostapd/main.c
  	wpa_supplicant_event_global = hostapd_wpa_event_global;
  	for (;;) {
 -		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:qz:");
-+		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:g:G:qz:v::");
++		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:g:G:qv::z:");
  		if (c < 0)
  			break;
  		switch (c) {

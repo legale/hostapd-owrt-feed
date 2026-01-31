@@ -1,0 +1,5 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 28 Jan 2019 21:36:44 +0100
+Subject: [PATCH] wpa_supplicant: fix calling channel switch via wpa_cli on
+ mesh interfaces
+

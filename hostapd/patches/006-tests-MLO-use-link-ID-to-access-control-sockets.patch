@@ -1,0 +1,10 @@
+With MLO, each BSS will create sockets under the given ctrl_iface
+directory with the socket name being '<ifname>_link<link_ID>'.
+Make necessary changes in MLO related test cases so that it can access
+the new socket and proceed further as expected.
+Signed-off-by: Aditya Kumar Singh <[quic_adisi at quicinc.com](http://lists.infradead.org/mailman/listinfo/hostap)>
+---
+tests/hwsim/hostapd.py | 27 +++++++---
+tests/hwsim/test_eht.py | 92 +++++++++++++++++++++++++++-----
+tests/hwsim/test_rsn_override.py | 2 +
+3 files changed, 101 insertions(+), 20 deletions(-)

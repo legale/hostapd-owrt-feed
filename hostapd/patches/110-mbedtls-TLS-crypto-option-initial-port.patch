@@ -64,45 +64,148 @@ Index: hostapd-10.0.0/hostapd/Makefile
  ifeq ($(CONFIG_TLS), gnutls)
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
-@@ -1373,10 +1407,11 @@ HOBJS += hlr_auc_gw.o ../src/utils/commo
- HOBJS += ../src/common/ieee802_11_common.o
- HOBJS += ../src/common/wpa_common.o
- HOBJS += ../src/crypto/sha1-prf.o
+@@ -944,9 +978,11 @@ endif
+ 
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), wolfssl)
 +ifneq ($(CONFIG_TLS), mbedtls)
- HOBJS += ../src/crypto/sha256-prf.o
- HOBJS += ../src/crypto/sha384-prf.o
- HOBJS += ../src/crypto/sha512-prf.o
--HOBJS += ../src/crypto/aes-encblock.o
+ AESOBJS += ../src/crypto/aes-wrap.o
+ endif
+ endif
 +endif
+ ifdef NEED_AES_EAX
+ AESOBJS += ../src/crypto/aes-eax.o
+ NEED_AES_CTR=y
+@@ -956,38 +992,48 @@ AESOBJS += ../src/crypto/aes-siv.o
+ NEED_AES_CTR=y
+ endif
+ ifdef NEED_AES_CTR
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-ctr.o
+ endif
++endif
+ ifdef NEED_AES_ENCBLOCK
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-encblock.o
+ endif
++endif
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-omac1.o
+ endif
+ endif
+ endif
++endif
+ ifdef NEED_AES_UNWRAP
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ NEED_AES_DEC=y
+ AESOBJS += ../src/crypto/aes-unwrap.o
+ endif
+ endif
+ endif
+ endif
++endif
+ ifdef NEED_AES_CBC
+ NEED_AES_DEC=y
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-cbc.o
+ endif
+ endif
+ endif
+ endif
++endif
+ ifdef NEED_AES_DEC
  ifdef CONFIG_INTERNAL_AES
- HOBJS += ../src/crypto/aes-internal.o
- HOBJS += ../src/crypto/aes-internal-enc.o
+ AESOBJS += ../src/crypto/aes-internal-dec.o
+@@ -1017,16 +1063,22 @@ endif
+ endif
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ SHA1OBJS += ../src/crypto/sha1-pbkdf2.o
+ endif
+ endif
++endif
+ ifdef NEED_T_PRF
++ifneq ($(CONFIG_TLS), mbedtls)
+ SHA1OBJS += ../src/crypto/sha1-tprf.o
+ endif
++endif
+ ifdef NEED_TLS_PRF
++ifneq ($(CONFIG_TLS), mbedtls)
+ SHA1OBJS += ../src/crypto/sha1-tlsprf.o
+ endif
+ endif
++endif
+ 
+ ifdef NEED_SHA1
+ OBJS += $(SHA1OBJS)
+@@ -1036,11 +1088,13 @@ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), gnutls)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ OBJS += ../src/crypto/md5.o
+ endif
+ endif
+ endif
+ endif
++endif
+ 
+ ifdef NEED_MD5
+ ifdef CONFIG_INTERNAL_MD5
+@@ -1187,11 +1241,13 @@ HOBJS += $(SHA1OBJS)
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ HOBJS += ../src/crypto/md5.o
+ endif
+ endif
+ endif
+ endif
++endif
+ 
+ ifdef CONFIG_RADIUS_SERVER
+ CFLAGS += -DRADIUS_SERVER
+@@ -1399,18 +1455,24 @@ SOBJS += ../src/common/sae.o
+ SOBJS += ../src/common/sae_pk.o
+ SOBJS += ../src/common/dragonfly.o
+ SOBJS += $(AESOBJS)
++ifneq ($(CONFIG_TLS), mbedtls)
+ SOBJS += ../src/crypto/sha384.o
+ SOBJS += ../src/crypto/sha512.o
+ SOBJS += ../src/crypto/sha256-prf.o
+ SOBJS += ../src/crypto/sha384-prf.o
+ SOBJS += ../src/crypto/sha512-prf.o
++endif
+ SOBJS += ../src/crypto/dh_groups.o
++ifneq ($(CONFIG_TLS), mbedtls)
+ SOBJS += ../src/crypto/sha256-kdf.o
+ SOBJS += ../src/crypto/sha384-kdf.o
+ SOBJS += ../src/crypto/sha512-kdf.o
++endif
+ SOBJS += ../src/common/wpa_common.o
+ SOBJS += ../src/crypto/random.o
++ifneq ($(CONFIG_TLS), mbedtls)
+ SOBJS += ../src/crypto/sha1-prf.o
++endif
+ SOBJS += ../src/utils/eloop.o
+ 
+ _OBJS_VAR := NOBJS
 Index: hostapd-10.0.0/hostapd/defconfig
 ===================================================================
 --- hostapd-10.0.0.orig/hostapd/defconfig
 +++ hostapd-10.0.0/hostapd/defconfig
-@@ -6,9 +6,19 @@
- # just setting VARIABLE=n is not disabling that variable.
- #
- # This file is included in Makefile, so variables like CFLAGS and LIBS can also
--# be modified from here. In most cass, these lines should use += in order not
-+# be modified from here. In most cases, these lines should use += in order not
- # to override previous values of the variables.
- 
-+# Uncomment following two lines and fix the paths if you have installed TLS
-+# libraries in a non-default location
-+#CFLAGS += -I/usr/local/openssl/include
-+#LIBS += -L/usr/local/openssl/lib
-+
-+# Some Red Hat versions seem to include kerberos header files from OpenSSL, but
-+# the kerberos files are not in the default include path. Following line can be
-+# used to fix build issues on such systems (krb5.h not found).
-+#CFLAGS += -I/usr/include/kerberos
-+
- # Driver interface for wired authenticator
- #CONFIG_DRIVER_WIRED=y
- 
-@@ -275,6 +285,7 @@ CONFIG_IPV6=y
+@@ -275,6 +275,7 @@ CONFIG_IPV6=y
  # openssl = OpenSSL (default)
  # gnutls = GnuTLS
  # internal = Internal TLSv1 implementation (experimental)
@@ -7583,6 +7686,127 @@ Index: hostapd-10.0.0/wpa_supplicant/Makefile
  ifeq ($(CONFIG_TLS), gnutls)
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
+@@ -1446,9 +1469,11 @@ endif
+ 
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ NEED_INTERNAL_AES_WRAP=y
+ endif
+ endif
++endif
+ ifdef CONFIG_OPENSSL_INTERNAL_AES_WRAP
+ # Seems to be needed at least with BoringSSL
+ NEED_INTERNAL_AES_WRAP=y
+@@ -1462,9 +1487,11 @@ endif
+ 
+ ifdef NEED_INTERNAL_AES_WRAP
+ ifneq ($(CONFIG_TLS), linux)
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-unwrap.o
+ endif
+ endif
++endif
+ ifdef NEED_AES_EAX
+ AESOBJS += ../src/crypto/aes-eax.o
+ NEED_AES_CTR=y
+@@ -1474,35 +1501,45 @@ AESOBJS += ../src/crypto/aes-siv.o
+ NEED_AES_CTR=y
+ endif
+ ifdef NEED_AES_CTR
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-ctr.o
+ endif
++endif
+ ifdef NEED_AES_ENCBLOCK
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-encblock.o
+ endif
++endif
+ NEED_AES_ENC=y
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-omac1.o
+ endif
+ endif
+ endif
++endif
+ ifdef NEED_AES_WRAP
+ NEED_AES_ENC=y
+ ifdef NEED_INTERNAL_AES_WRAP
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-wrap.o
+ endif
+ endif
++endif
+ ifdef NEED_AES_CBC
+ NEED_AES_ENC=y
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ AESOBJS += ../src/crypto/aes-cbc.o
+ endif
+ endif
+ endif
+ endif
++endif
+ ifdef NEED_AES_ENC
+ ifdef CONFIG_INTERNAL_AES
+ AESOBJS += ../src/crypto/aes-internal-enc.o
+@@ -1535,29 +1572,37 @@ CFLAGS += -DCONFIG_NO_PBKDF2
+ else
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ SHA1OBJS += ../src/crypto/sha1-pbkdf2.o
+ endif
+ endif
+ endif
++endif
+ ifdef NEED_T_PRF
++ifneq ($(CONFIG_TLS), mbedtls)
+ SHA1OBJS += ../src/crypto/sha1-tprf.o
+ endif
++endif
+ ifdef NEED_TLS_PRF
++ifneq ($(CONFIG_TLS), mbedtls)
+ SHA1OBJS += ../src/crypto/sha1-tlsprf.o
+ endif
+ endif
++endif
+ 
+ ifndef CONFIG_FIPS
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), linux)
+ ifneq ($(CONFIG_TLS), gnutls)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ MD5OBJS += ../src/crypto/md5.o
+ endif
+ endif
+ endif
+ endif
+ endif
++endif
+ ifdef NEED_MD5
+ ifdef CONFIG_INTERNAL_MD5
+ MD5OBJS += ../src/crypto/md5-internal.o
+@@ -1851,10 +1896,12 @@ ifdef CONFIG_FIPS
+ CFLAGS += -DCONFIG_FIPS
+ ifneq ($(CONFIG_TLS), openssl)
+ ifneq ($(CONFIG_TLS), wolfssl)
++ifneq ($(CONFIG_TLS), mbedtls)
+ $(error CONFIG_FIPS=y requires CONFIG_TLS=openssl)
+ endif
+ endif
+ endif
++endif
+ 
+ OBJS += $(SHA1OBJS) $(DESOBJS)
+ 
 Index: hostapd-10.0.0/wpa_supplicant/defconfig
 ===================================================================
 --- hostapd-10.0.0.orig/wpa_supplicant/defconfig
