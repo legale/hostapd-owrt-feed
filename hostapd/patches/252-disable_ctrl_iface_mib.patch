@@ -2,8 +2,10 @@ From: Felix Fietkau <nbd@openwrt.org>
 Date: Fri, 18 Mar 2011 02:15:52 +0000
 Subject: [PATCH] Remove some unnecessary control interface functionality
 
---- a/hostapd/Makefile
-+++ b/hostapd/Makefile
+Index: hostapd-10.0.0/hostapd/Makefile
+===================================================================
+--- hostapd-10.0.0.orig/hostapd/Makefile
++++ hostapd-10.0.0/hostapd/Makefile
 @@ -225,6 +225,9 @@ endif
  ifdef CONFIG_NO_CTRL_IFACE
  CFLAGS += -DCONFIG_NO_CTRL_IFACE
@@ -14,9 +16,11 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  ifeq ($(CONFIG_CTRL_IFACE), udp)
  CFLAGS += -DCONFIG_CTRL_IFACE_UDP
  else
---- a/hostapd/ctrl_iface.c
-+++ b/hostapd/ctrl_iface.c
-@@ -4056,6 +4056,7 @@ static int hostapd_ctrl_iface_receive_pr
+Index: hostapd-10.0.0/hostapd/ctrl_iface.c
+===================================================================
+--- hostapd-10.0.0.orig/hostapd/ctrl_iface.c
++++ hostapd-10.0.0/hostapd/ctrl_iface.c
+@@ -3963,6 +3963,7 @@ static int hostapd_ctrl_iface_receive_pr
  						      reply_size);
  	} else if (os_strcmp(buf, "STATUS-DRIVER") == 0) {
  		reply_len = hostapd_drv_status(hapd, reply, reply_size);
@@ -24,7 +28,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -4097,6 +4098,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4004,6 +4005,7 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
  							reply_size);
@@ -32,9 +36,11 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "ATTACH") == 0) {
  		if (hostapd_ctrl_iface_attach(hapd, from, fromlen, NULL))
  			reply_len = -1;
---- a/src/ap/ctrl_iface_ap.c
-+++ b/src/ap/ctrl_iface_ap.c
-@@ -27,6 +27,26 @@
+Index: hostapd-10.0.0/src/ap/ctrl_iface_ap.c
+===================================================================
+--- hostapd-10.0.0.orig/src/ap/ctrl_iface_ap.c
++++ hostapd-10.0.0/src/ap/ctrl_iface_ap.c
+@@ -28,6 +28,26 @@
  #include "taxonomy.h"
  #include "wnm_ap.h"
  
@@ -61,7 +67,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  static size_t hostapd_write_ht_mcs_bitmask(char *buf, size_t buflen,
  					   size_t curr_len, const u8 *mcs_set)
-@@ -213,26 +233,6 @@ static const char * timeout_next_str(int
+@@ -214,26 +234,6 @@ static const char * timeout_next_str(int
  }
  
  
@@ -88,7 +94,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  static int hostapd_ctrl_iface_sta_mib(struct hostapd_data *hapd,
  				      struct sta_info *sta,
  				      char *buf, size_t buflen)
-@@ -563,6 +563,7 @@ int hostapd_ctrl_iface_sta_next(struct h
+@@ -573,6 +573,7 @@ int hostapd_ctrl_iface_sta_next(struct h
  	return hostapd_ctrl_iface_sta_mib(hapd, sta->next, buf, buflen);
  }
  
@@ -96,24 +102,25 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  #ifdef CONFIG_P2P_MANAGER
  static int p2p_manager_disconnect(struct hostapd_data *hapd, u16 stype,
-@@ -1019,12 +1020,12 @@ int hostapd_ctrl_iface_status(struct hos
- 			return len;
+@@ -1045,10 +1046,12 @@ int hostapd_ctrl_iface_status(struct hos
  		len += ret;
  	}
--
-+#ifdef CONFIG_CTRL_IFACE_MIB
- 	if (iface->conf->ieee80211n && !hapd->conf->disable_11n && mode) {
+ 
+-	if (hostapd_is_ht_enabled(hapd) && mode) {
++	#ifdef CONFIG_CTRL_IFACE_MIB
++if (hostapd_is_ht_enabled(hapd) && mode) {
  		len = hostapd_write_ht_mcs_bitmask(buf, buflen, len,
  						   mode->mcs_set);
  	}
--
 +#endif /* CONFIG_CTRL_IFACE_MIB */
- 	if (iface->current_rates && iface->num_rates) {
+ 
+ 	if (hapd->current_rates && hapd->num_rates) {
  		ret = os_snprintf(buf + len, buflen - len, "supported_rates=");
- 		if (os_snprintf_error(buflen - len, ret))
---- a/src/ap/ieee802_1x.c
-+++ b/src/ap/ieee802_1x.c
-@@ -2870,6 +2870,7 @@ static const char * bool_txt(bool val)
+Index: hostapd-10.0.0/src/ap/ieee802_1x.c
+===================================================================
+--- hostapd-10.0.0.orig/src/ap/ieee802_1x.c
++++ hostapd-10.0.0/src/ap/ieee802_1x.c
+@@ -2837,6 +2837,7 @@ static const char * bool_txt(bool val)
  	return val ? "TRUE" : "FALSE";
  }
  
@@ -121,7 +128,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen)
  {
-@@ -3056,6 +3057,7 @@ int ieee802_1x_get_mib_sta(struct hostap
+@@ -3023,6 +3024,7 @@ int ieee802_1x_get_mib_sta(struct hostap
  	return len;
  }
  
@@ -129,9 +136,11 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  #ifdef CONFIG_HS20
  static void ieee802_1x_wnm_notif_send(void *eloop_ctx, void *timeout_ctx)
---- a/src/ap/wpa_auth.c
-+++ b/src/ap/wpa_auth.c
-@@ -6157,6 +6157,7 @@ static const char * wpa_bool_txt(int val
+Index: hostapd-10.0.0/src/ap/wpa_auth.c
+===================================================================
+--- hostapd-10.0.0.orig/src/ap/wpa_auth.c
++++ hostapd-10.0.0/src/ap/wpa_auth.c
+@@ -6464,6 +6464,7 @@ static const char * wpa_bool_txt(int val
  	return val ? "TRUE" : "FALSE";
  }
  
@@ -139,7 +148,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
-@@ -6309,7 +6310,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
+@@ -6616,7 +6617,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
  
  	return len;
  }
@@ -148,9 +157,11 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  void wpa_auth_countermeasures_start(struct wpa_authenticator *wpa_auth)
  {
---- a/src/rsn_supp/wpa.c
-+++ b/src/rsn_supp/wpa.c
-@@ -4155,6 +4155,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
+Index: hostapd-10.0.0/src/rsn_supp/wpa.c
+===================================================================
+--- hostapd-10.0.0.orig/src/rsn_supp/wpa.c
++++ hostapd-10.0.0/src/rsn_supp/wpa.c
+@@ -4247,6 +4247,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
  }
  
  
@@ -159,7 +170,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
  ((s) >> 24) & 0xff, ((s) >> 16) & 0xff, ((s) >> 8) & 0xff, (s) & 0xff
-@@ -4236,6 +4238,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
+@@ -4328,6 +4330,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
  
  	return (int) len;
  }
@@ -167,9 +178,11 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  #endif /* CONFIG_CTRL_IFACE */
  
  
---- a/wpa_supplicant/Makefile
-+++ b/wpa_supplicant/Makefile
-@@ -1044,6 +1044,9 @@ ifdef CONFIG_FILS
+Index: hostapd-10.0.0/wpa_supplicant/Makefile
+===================================================================
+--- hostapd-10.0.0.orig/wpa_supplicant/Makefile
++++ hostapd-10.0.0/wpa_supplicant/Makefile
+@@ -1059,6 +1059,9 @@ ifdef CONFIG_FILS
  OBJS += ../src/ap/fils_hlp.o
  endif
  ifdef CONFIG_CTRL_IFACE
@@ -179,9 +192,11 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  OBJS += ../src/ap/ctrl_iface_ap.o
  endif
  
---- a/wpa_supplicant/ap.c
-+++ b/wpa_supplicant/ap.c
-@@ -1521,7 +1521,7 @@ int wpas_ap_wps_nfc_report_handover(stru
+Index: hostapd-10.0.0/wpa_supplicant/ap.c
+===================================================================
+--- hostapd-10.0.0.orig/wpa_supplicant/ap.c
++++ hostapd-10.0.0/wpa_supplicant/ap.c
+@@ -1527,7 +1527,7 @@ int wpas_ap_wps_nfc_report_handover(stru
  #endif /* CONFIG_WPS */
  
  
@@ -190,9 +205,11 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  int ap_ctrl_iface_sta_first(struct wpa_supplicant *wpa_s,
  			    char *buf, size_t buflen)
---- a/wpa_supplicant/ctrl_iface.c
-+++ b/wpa_supplicant/ctrl_iface.c
-@@ -2355,7 +2355,7 @@ static int wpa_supplicant_ctrl_iface_sta
+Index: hostapd-10.0.0/wpa_supplicant/ctrl_iface.c
+===================================================================
+--- hostapd-10.0.0.orig/wpa_supplicant/ctrl_iface.c
++++ hostapd-10.0.0/wpa_supplicant/ctrl_iface.c
+@@ -2405,7 +2405,7 @@ static int wpa_supplicant_ctrl_iface_sta
  			pos += ret;
  		}
  
@@ -201,15 +218,15 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  		if (wpa_s->ap_iface) {
  			pos += ap_ctrl_iface_wpa_get_status(wpa_s, pos,
  							    end - pos,
-@@ -12634,6 +12634,7 @@ char * wpa_supplicant_ctrl_iface_process
- 			reply_len = -1;
+@@ -13248,6 +13248,7 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "NOTE ", 5) == 0) {
  		wpa_printf(MSG_INFO, "NOTE: %s", buf + 5);
+ 		wpa_trace_set_context(buf + 5);
 +#ifdef CONFIG_CTRL_IFACE_MIB
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = wpa_sm_get_mib(wpa_s->wpa, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -12646,6 +12647,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -13260,6 +13261,7 @@ char * wpa_supplicant_ctrl_iface_process
  				reply_size - reply_len);
  #endif /* CONFIG_MACSEC */
  		}
@@ -217,7 +234,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strncmp(buf, "STATUS", 6) == 0) {
  		reply_len = wpa_supplicant_ctrl_iface_status(
  			wpa_s, buf + 6, reply, reply_size);
-@@ -13134,6 +13136,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -13747,6 +13749,7 @@ char * wpa_supplicant_ctrl_iface_process
  		reply_len = wpa_supplicant_ctrl_iface_bss(
  			wpa_s, buf + 4, reply, reply_size);
  #ifdef CONFIG_AP
@@ -225,7 +242,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
  		reply_len = ap_ctrl_iface_sta_first(wpa_s, reply, reply_size);
  	} else if (os_strncmp(buf, "STA ", 4) == 0) {
-@@ -13142,12 +13145,15 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -13755,12 +13758,15 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = ap_ctrl_iface_sta_next(wpa_s, buf + 9, reply,
  						   reply_size);

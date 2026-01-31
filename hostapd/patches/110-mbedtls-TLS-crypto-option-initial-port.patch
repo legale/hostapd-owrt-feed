@@ -19,10 +19,12 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  create mode 100644 src/crypto/tls_mbedtls.c
  create mode 100644 tests/build/build-wpa_supplicant-mbedtls.config
 
---- a/hostapd/Makefile
-+++ b/hostapd/Makefile
-@@ -826,6 +826,40 @@ CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
- endif
+Index: hostapd-10.0.0/hostapd/Makefile
+===================================================================
+--- hostapd-10.0.0.orig/hostapd/Makefile
++++ hostapd-10.0.0/hostapd/Makefile
+@@ -764,6 +764,40 @@ endif
+ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONFIG_TLS_DEFAULT_CIPHERS)\"
  endif
  
 +ifeq ($(CONFIG_TLS), mbedtls)
@@ -60,9 +62,9 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +endif
 +
  ifeq ($(CONFIG_TLS), gnutls)
- CFLAGS += -DCONFIG_TLS_GNUTLS
  ifndef CONFIG_CRYPTO
-@@ -1487,10 +1521,11 @@ endif
+ # default to libgcrypt
+@@ -1373,10 +1407,11 @@ HOBJS += hlr_auc_gw.o ../src/utils/commo
  HOBJS += ../src/common/ieee802_11_common.o
  HOBJS += ../src/common/wpa_common.o
  HOBJS += ../src/crypto/sha1-prf.o
@@ -75,9 +77,11 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef CONFIG_INTERNAL_AES
  HOBJS += ../src/crypto/aes-internal.o
  HOBJS += ../src/crypto/aes-internal-enc.o
---- a/hostapd/defconfig
-+++ b/hostapd/defconfig
-@@ -6,9 +6,21 @@
+Index: hostapd-10.0.0/hostapd/defconfig
+===================================================================
+--- hostapd-10.0.0.orig/hostapd/defconfig
++++ hostapd-10.0.0/hostapd/defconfig
+@@ -6,9 +6,19 @@
  # just setting VARIABLE=n is not disabling that variable.
  #
  # This file is included in Makefile, so variables like CFLAGS and LIBS can also
@@ -85,7 +89,6 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +# be modified from here. In most cases, these lines should use += in order not
  # to override previous values of the variables.
  
-+
 +# Uncomment following two lines and fix the paths if you have installed TLS
 +# libraries in a non-default location
 +#CFLAGS += -I/usr/local/openssl/include
@@ -96,11 +99,10 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +# used to fix build issues on such systems (krb5.h not found).
 +#CFLAGS += -I/usr/include/kerberos
 +
-+
- # Driver interface for Host AP driver
- CONFIG_DRIVER_HOSTAP=y
+ # Driver interface for wired authenticator
+ #CONFIG_DRIVER_WIRED=y
  
-@@ -281,6 +293,7 @@ CONFIG_IPV6=y
+@@ -275,6 +285,7 @@ CONFIG_IPV6=y
  # openssl = OpenSSL (default)
  # gnutls = GnuTLS
  # internal = Internal TLSv1 implementation (experimental)
@@ -108,8 +110,10 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  # linux = Linux kernel AF_ALG and internal TLSv1 implementation (experimental)
  # none = Empty template
  #CONFIG_TLS=openssl
+Index: hostapd-10.0.0/src/crypto/crypto_mbedtls.c
+===================================================================
 --- /dev/null
-+++ b/src/crypto/crypto_mbedtls.c
++++ hostapd-10.0.0/src/crypto/crypto_mbedtls.c
 @@ -0,0 +1,4043 @@
 +/*
 + * crypto wrapper functions for mbed TLS
@@ -4154,8 +4158,10 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +}
 +
 +#endif
+Index: hostapd-10.0.0/src/crypto/tls_mbedtls.c
+===================================================================
 --- /dev/null
-+++ b/src/crypto/tls_mbedtls.c
++++ hostapd-10.0.0/src/crypto/tls_mbedtls.c
 @@ -0,0 +1,3313 @@
 +/*
 + * SSL/TLS interface functions for mbed TLS
@@ -7470,8 +7476,10 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +
 +	return 0;
 +}
+Index: hostapd-10.0.0/tests/build/build-wpa_supplicant-mbedtls.config
+===================================================================
 --- /dev/null
-+++ b/tests/build/build-wpa_supplicant-mbedtls.config
++++ hostapd-10.0.0/tests/build/build-wpa_supplicant-mbedtls.config
 @@ -0,0 +1,24 @@
 +CONFIG_TLS=mbedtls
 +
@@ -7497,8 +7505,10 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +CONFIG_SUITEB192=y
 +
 +CFLAGS += -Werror
---- a/tests/hwsim/example-hostapd.config
-+++ b/tests/hwsim/example-hostapd.config
+Index: hostapd-10.0.0/tests/hwsim/example-hostapd.config
+===================================================================
+--- hostapd-10.0.0.orig/tests/hwsim/example-hostapd.config
++++ hostapd-10.0.0/tests/hwsim/example-hostapd.config
 @@ -4,6 +4,7 @@ CONFIG_DRIVER_NONE=y
  CONFIG_DRIVER_NL80211=y
  CONFIG_RSN_PREAUTH=y
@@ -7517,8 +7527,10 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CONFIG_EAP_EKE=y
  CONFIG_PKCS12=y
  CONFIG_RADIUS_SERVER=y
---- a/tests/hwsim/example-wpa_supplicant.config
-+++ b/tests/hwsim/example-wpa_supplicant.config
+Index: hostapd-10.0.0/tests/hwsim/example-wpa_supplicant.config
+===================================================================
+--- hostapd-10.0.0.orig/tests/hwsim/example-wpa_supplicant.config
++++ hostapd-10.0.0/tests/hwsim/example-wpa_supplicant.config
 @@ -2,6 +2,7 @@
  
  CONFIG_TLS=openssl
@@ -7537,10 +7549,12 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  CONFIG_USIM_SIMULATOR=y
  CONFIG_SIM_SIMULATOR=y
---- a/wpa_supplicant/Makefile
-+++ b/wpa_supplicant/Makefile
-@@ -1304,6 +1304,29 @@ CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
- endif
+Index: hostapd-10.0.0/wpa_supplicant/Makefile
+===================================================================
+--- hostapd-10.0.0.orig/wpa_supplicant/Makefile
++++ hostapd-10.0.0/wpa_supplicant/Makefile
+@@ -1253,6 +1253,29 @@ endif
+ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONFIG_TLS_DEFAULT_CIPHERS)\"
  endif
  
 +ifeq ($(CONFIG_TLS), mbedtls)
@@ -7567,10 +7581,12 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +endif
 +
  ifeq ($(CONFIG_TLS), gnutls)
- CFLAGS += -DCONFIG_TLS_GNUTLS
  ifndef CONFIG_CRYPTO
---- a/wpa_supplicant/defconfig
-+++ b/wpa_supplicant/defconfig
+ # default to libgcrypt
+Index: hostapd-10.0.0/wpa_supplicant/defconfig
+===================================================================
+--- hostapd-10.0.0.orig/wpa_supplicant/defconfig
++++ hostapd-10.0.0/wpa_supplicant/defconfig
 @@ -10,8 +10,8 @@
  # to override previous values of the variables.
  

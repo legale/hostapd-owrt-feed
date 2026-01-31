@@ -6,9 +6,11 @@ Subject: [PATCH] hostapd: make the snooping interface (for proxyarp)
 Use the VLAN interface instead of the bridge, to ensure that hostapd receives
 untagged DHCP packets
 
---- a/hostapd/config_file.c
-+++ b/hostapd/config_file.c
-@@ -2476,6 +2476,8 @@ static int hostapd_config_fill(struct ho
+Index: hostapd-10.0.0/hostapd/config_file.c
+===================================================================
+--- hostapd-10.0.0.orig/hostapd/config_file.c
++++ hostapd-10.0.0/hostapd/config_file.c
+@@ -2245,6 +2245,8 @@ static int hostapd_config_fill(struct ho
  			os_strlcpy(bss->wds_bridge, pos, sizeof(bss->wds_bridge));
  	} else if (os_strcmp(buf, "bridge_hairpin") == 0) {
  		bss->bridge_hairpin = atoi(pos);
@@ -17,9 +19,11 @@ untagged DHCP packets
  	} else if (os_strcmp(buf, "vlan_bridge") == 0) {
  		os_strlcpy(bss->vlan_bridge, pos, sizeof(bss->vlan_bridge));
  	} else if (os_strcmp(buf, "wds_bridge") == 0) {
---- a/src/ap/ap_config.h
-+++ b/src/ap/ap_config.h
-@@ -284,6 +284,7 @@ struct hostapd_bss_config {
+Index: hostapd-10.0.0/src/ap/ap_config.h
+===================================================================
+--- hostapd-10.0.0.orig/src/ap/ap_config.h
++++ hostapd-10.0.0/src/ap/ap_config.h
+@@ -286,6 +286,7 @@ struct hostapd_bss_config {
  	char iface[IFNAMSIZ + 1];
  	char bridge[IFNAMSIZ + 1];
  	char ft_iface[IFNAMSIZ + 1];
@@ -27,9 +31,11 @@ untagged DHCP packets
  	char vlan_bridge[IFNAMSIZ + 1];
  	char wds_bridge[IFNAMSIZ + 1];
  	int bridge_hairpin; /* hairpin_mode on bridge members */
---- a/src/ap/ap_drv_ops.h
-+++ b/src/ap/ap_drv_ops.h
-@@ -376,12 +376,12 @@ static inline int hostapd_drv_br_port_se
+Index: hostapd-10.0.0/src/ap/ap_drv_ops.h
+===================================================================
+--- hostapd-10.0.0.orig/src/ap/ap_drv_ops.h
++++ hostapd-10.0.0/src/ap/ap_drv_ops.h
+@@ -377,12 +377,12 @@ static inline int hostapd_drv_br_port_se
  
  static inline int hostapd_drv_br_set_net_param(struct hostapd_data *hapd,
  					       enum drv_br_net_param param,
@@ -44,8 +50,10 @@ untagged DHCP packets
  }
  
  static inline int hostapd_drv_vendor_cmd(struct hostapd_data *hapd,
---- a/src/ap/x_snoop.c
-+++ b/src/ap/x_snoop.c
+Index: hostapd-10.0.0/src/ap/x_snoop.c
+===================================================================
+--- hostapd-10.0.0.orig/src/ap/x_snoop.c
++++ hostapd-10.0.0/src/ap/x_snoop.c
 @@ -33,28 +33,31 @@ int x_snoop_init(struct hostapd_data *ha
  
  	hapd->x_snoop_initialized = true;
@@ -110,9 +118,11 @@ untagged DHCP packets
  	hostapd_drv_br_port_set_attr(hapd, DRV_BR_PORT_ATTR_PROXYARP, 0);
  	hostapd_drv_br_port_set_attr(hapd, DRV_BR_PORT_ATTR_HAIRPIN_MODE, 0);
  	hapd->x_snoop_initialized = false;
---- a/src/drivers/driver.h
-+++ b/src/drivers/driver.h
-@@ -4350,7 +4350,7 @@ struct wpa_driver_ops {
+Index: hostapd-10.0.0/src/drivers/driver.h
+===================================================================
+--- hostapd-10.0.0.orig/src/drivers/driver.h
++++ hostapd-10.0.0/src/drivers/driver.h
+@@ -4543,7 +4543,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, negative (<0) on failure
  	 */
  	int (*br_set_net_param)(void *priv, enum drv_br_net_param param,
@@ -121,27 +131,16 @@ untagged DHCP packets
  
  	/**
  	 * get_wowlan - Get wake-on-wireless status
---- a/src/drivers/driver_nl80211.c
-+++ b/src/drivers/driver_nl80211.c
-@@ -12663,7 +12663,7 @@ static const char * drv_br_net_param_str
- 
+Index: hostapd-10.0.0/src/drivers/driver_nl80211.c
+===================================================================
+--- hostapd-10.0.0.orig/src/drivers/driver_nl80211.c
++++ hostapd-10.0.0/src/drivers/driver_nl80211.c
+@@ -12079,7 +12079,7 @@ static const char *drv_br_net_param_str(
+ }
  
  static int wpa_driver_br_set_net_param(void *priv, enum drv_br_net_param param,
--				       unsigned int val)
-+				       const char *ifname, unsigned int val)
- {
- 	struct i802_bss *bss = priv;
- 	char path[128];
-@@ -12689,8 +12689,11 @@ static int wpa_driver_br_set_net_param(v
- 			return -EINVAL;
- 	}
- 
-+	if (!ifname)
-+		ifname = bss->brname;
-+
- 	os_snprintf(path, sizeof(path), "/proc/sys/net/ipv%d/conf/%s/%s",
--		    ip_version, bss->brname, param_txt);
-+		    ip_version, ifname, param_txt);
- 
- set_val:
- 	if (linux_write_system_file(path, val))
+-                                       unsigned int val) {
++                                       const char *ifname, unsigned int val) {
+   struct i802_bss *bss = priv;
+   char path[128];
+   const char *param_txt;
