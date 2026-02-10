@@ -158,8 +158,6 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	#original src files
 	cp -r ./src_git/* $(PKG_BUILD_DIR)
-	#additional src files
-	cp -r ./src/* $(PKG_BUILD_DIR)
 	$(Build/Patch)
 endef
 
