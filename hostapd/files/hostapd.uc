@@ -32,6 +32,13 @@ hostapd.data.iface_fields = {
 	iapp_interface: true,
 };
 
+hostapd.data.radius_endpoint_fields = {
+	auth_server_addr: true,
+	auth_server_port: true,
+	acct_server_addr: true,
+	acct_server_port: true,
+};
+
 hostapd.data.bss_info_fields = {
 	// radio
 	hw_mode: true,
@@ -430,6 +437,86 @@ function bss_remove_file_fields(config)
 	delete new_cfg.hash.vlan_file;
 
 	return new_cfg;
+}
+
+function remove_radius_endpoint_fields(config)
+{
+	//hot_update: ignore only RADIUS addr/port for diff check
+	return filter(config, (line) => !hostapd.data.radius_endpoint_fields[split(line, "=")[0]]);
+}
+
+function bss_remove_radius_endpoint_fields(config)
+{
+	let new_cfg = {};
+
+	for (let key in config)
+		new_cfg[key] = config[key];
+	new_cfg.data = remove_radius_endpoint_fields(new_cfg.data);
+
+	return new_cfg;
+}
+
+function bss_radius_endpoint_get(config, type)
+{
+	let ep = {};
+	let addr_key = type + "_server_addr";
+	let port_key = type + "_server_port";
+
+	for (let line in config) {
+		let val = split(line, "=", 2);
+
+		if (val[0] == addr_key) {
+			//hot_update: duplicate endpoint is not safe for direct update
+			if (ep.addr != null)
+				return null;
+			ep.addr = val[1];
+			continue;
+		}
+
+		if (val[0] == port_key) {
+			//hot_update: duplicate endpoint is not safe for direct update
+			if (ep.port != null)
+				return null;
+			ep.port = int(val[1]);
+			continue;
+		}
+	}
+
+	if (ep.addr == null && ep.port == null)
+		return {};
+
+	//hot_update: addr and port must be explicit for direct update
+	if (ep.addr == null || ep.port == null || ep.port <= 0 || ep.port > 65535)
+		return null;
+
+	return ep;
+}
+
+function bss_radius_endpoint_diff(config, old_config)
+{
+	let ret = {};
+	let auth = bss_radius_endpoint_get(config.data, "auth");
+	let old_auth = bss_radius_endpoint_get(old_config.data, "auth");
+	let acct = bss_radius_endpoint_get(config.data, "acct");
+	let old_acct = bss_radius_endpoint_get(old_config.data, "acct");
+
+	//hot_update: any non-radius diff still uses normal reload path
+	if (!is_equal(bss_remove_radius_endpoint_fields(config),
+	              bss_remove_radius_endpoint_fields(old_config)))
+		return null;
+
+	if (auth == null || old_auth == null || acct == null || old_acct == null)
+		return null;
+
+	if (!is_equal(auth, old_auth))
+		ret.auth = auth;
+	if (!is_equal(acct, old_acct))
+		ret.acct = acct;
+
+	if (!ret.auth && !ret.acct)
+		return null;
+
+	return ret;
 }
 
 function bss_ifindex_list(config)
