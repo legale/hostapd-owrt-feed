@@ -519,6 +519,27 @@ function bss_radius_endpoint_diff(config, old_config)
 	return ret;
 }
 
+function bss_update_radius_endpoint(bss, diff, ifname)
+{
+	if (diff.auth) {
+		//hot_update: update auth server without BSS reload
+		if (bss.update_radius_auth_server(diff.auth.addr, diff.auth.port) < 0) {
+			hostapd.printf(`Failed to update RADIUS auth server for bss ${ifname}`);
+			return false;
+		}
+	}
+
+	if (diff.acct) {
+		//hot_update: update acct server without BSS reload
+		if (bss.update_radius_acct_server(diff.acct.addr, diff.acct.port) < 0) {
+			hostapd.printf(`Failed to update RADIUS acct server for bss ${ifname}`);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 function bss_ifindex_list(config)
 {
 	config = filter(config, (line) => !!hostapd.data.iface_fields[split(line, "=")[0]]);
@@ -784,6 +805,15 @@ function iface_reload_config(name, phydev, config, old_config)
 
 		if (is_equal(config.bss[i], bss_list_cfg[i]))
 			continue;
+
+		let radius_diff = bss_radius_endpoint_diff(config.bss[i], bss_list_cfg[i]);
+		if (radius_diff) {
+			//hot_update: addr/port only, skip bss.set_config()
+			if (!bss_update_radius_endpoint(bss, radius_diff, ifname))
+				return false;
+			hostapd.printf(`Updated RADIUS endpoint for bss ${ifname}`);
+			continue;
+		}
 
 		if (is_equal(bss_remove_file_fields(config.bss[i]),
 		             bss_remove_file_fields(bss_list_cfg[i]))) {
