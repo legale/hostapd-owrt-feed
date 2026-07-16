@@ -458,9 +458,12 @@ function bss_remove_radius_endpoint_fields(config)
 
 function bss_radius_endpoint_get(config, type)
 {
-	let ep = {};
+	let ep = {
+		port: type == "auth" ? 1812 : 1813,
+	};
 	let addr_key = type + "_server_addr";
 	let port_key = type + "_server_port";
+	let have_port = false;
 
 	for (let line in config) {
 		let val = split(line, "=", 2);
@@ -475,18 +478,18 @@ function bss_radius_endpoint_get(config, type)
 
 		if (val[0] == port_key) {
 			//hot_update: duplicate endpoint is not safe for direct update
-			if (ep.port != null)
+			if (have_port)
 				return null;
 			ep.port = int(val[1]);
+			have_port = true;
 			continue;
 		}
 	}
 
-	if (ep.addr == null && ep.port == null)
+	if (ep.addr == null && !have_port)
 		return {};
 
-	//hot_update: addr and port must be explicit for direct update
-	if (ep.addr == null || ep.port == null || ep.port <= 0 || ep.port > 65535)
+	if (ep.addr == null || ep.port <= 0 || ep.port > 65535)
 		return null;
 
 	return ep;
@@ -557,7 +560,8 @@ function bss_ifindex_list(config)
 
 function bss_config_hash(config)
 {
-	return hostapd.sha1(remove_file_fields(config) + bss_ifindex_list(config));
+	return hostapd.sha1(remove_radius_endpoint_fields(remove_file_fields(config)) +
+			    bss_ifindex_list(config));
 }
 
 function bss_find_existing(config, prev_config, prev_hash)
